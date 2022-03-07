@@ -1,52 +1,81 @@
 # Lazy Loading Routes
 
-<div class="vueschool"><a href="https://vueschool.io/lessons/how-to-lazy-load-routes-with-vue-router?friend=vuerouter" target="_blank" rel="sponsored noopener" title="Learn how to increase performance by lazy loading routes on Vue School">Learn how to lazy load routes with a free lesson on Vue School</a></div>
+<VueSchoolLink
+  href="https://vueschool.io/lessons/lazy-loading-routes-vue-cli-only"
+  title="Learn about lazy loading routes"
+/>
 
-When building apps with a bundler, the JavaScript bundle can become quite large, and thus affect the page load time. It would be more efficient if we can split each route's components into a separate chunk, and only load them when the route is visited.
+When building apps with a bundler, the JavaScript bundle can become quite large, and thus affect the page load time. It would be more efficient if we can split each route's components into a separate chunks, and only load them when the route is visited.
 
-Combining Vue's [async component feature](https://vuejs.org/guide/components.html#Async-Components) and webpack's [code splitting feature](https://webpack.js.org/guides/code-splitting-async/), it's trivially easy to lazy-load route components.
-
-First, an async component can be defined as a factory function that returns a Promise (which should resolve to the component itself):
+Vue Router supports [dynamic imports](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import#Dynamic_Imports) out of the box, meaning you can replace static imports with dynamic ones:
 
 ```js
-const Foo = () =>
+// replace
+// import UserDetails from './views/UserDetails'
+// with
+const UserDetails = () => import('./views/UserDetails')
+
+const router = createRouter({
+  // ...
+  routes: [{ path: '/users/:id', component: UserDetails }],
+})
+```
+
+The `component` (and `components`) option accepts a function that returns a Promise of a component and Vue Router **will only fetch it when entering the page for the first time**, then use the cached version. Which means you can also have more complex functions as long as they return a Promise:
+
+```js
+const UserDetails = () =>
   Promise.resolve({
     /* component definition */
   })
 ```
 
-Second, in webpack 2, we can use the [dynamic import](https://github.com/tc39/proposal-dynamic-import) syntax to indicate a code-split point:
-
-```js
-import('./Foo.vue') // returns a Promise
-```
+In general, it's a good idea **to always use dynamic imports** for all your routes.
 
 ::: tip Note
-if you are using Babel, you will need to add the [syntax-dynamic-import](https://babeljs.io/docs/plugins/syntax-dynamic-import/) plugin so that Babel can properly parse the syntax.
+Do **not** use [Async components](https://v3.vuejs.org/guide/component-dynamic-async.html#async-components) for routes. Async components can still be used inside route components but route component themselves are just dynamic imports.
 :::
 
-Combining the two, this is how to define an async component that will be automatically code-split by webpack:
+When using a bundler like webpack, this will automatically benefit from [code splitting](https://webpack.js.org/guides/code-splitting/)
 
-```js
-const Foo = () => import('./Foo.vue')
-```
-
-Nothing needs to change in the route config, just use `Foo` as usual:
-
-```js
-const router = new VueRouter({
-  routes: [{ path: '/foo', component: Foo }]
-})
-```
+When using Babel, you will need to add the [syntax-dynamic-import](https://babeljs.io/docs/plugins/syntax-dynamic-import/) plugin so that Babel can properly parse the syntax.
 
 ## Grouping Components in the Same Chunk
 
-Sometimes we may want to group all the components nested under the same route into the same async chunk. To achieve that we need to use [named chunks](https://webpack.js.org/api/module-methods/#magic-comments) by providing a chunk name using a special comment syntax (requires webpack > 2.4):
+### With webpack
+
+Sometimes we may want to group all the components nested under the same route into the same async chunk. To achieve that we need to use [named chunks](https://webpack.js.org/guides/code-splitting/#dynamic-imports) by providing a chunk name using a special comment syntax (requires webpack > 2.4):
 
 ```js
-const Foo = () => import(/* webpackChunkName: "group-foo" */ './Foo.vue')
-const Bar = () => import(/* webpackChunkName: "group-foo" */ './Bar.vue')
-const Baz = () => import(/* webpackChunkName: "group-foo" */ './Baz.vue')
+const UserDetails = () =>
+  import(/* webpackChunkName: "group-user" */ './UserDetails.vue')
+const UserDashboard = () =>
+  import(/* webpackChunkName: "group-user" */ './UserDashboard.vue')
+const UserProfileEdit = () =>
+  import(/* webpackChunkName: "group-user" */ './UserProfileEdit.vue')
 ```
 
 webpack will group any async module with the same chunk name into the same async chunk.
+
+### With Vite
+
+In Vite you can define the chunks under the [`rollupOptions`](https://vitejs.dev/config/#build-rollupoptions):
+
+```js
+// vite.config.js
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      // https://rollupjs.org/guide/en/#outputmanualchunks
+      output: {
+        manualChunks: {
+          'group-user': [
+            './src/UserDetails',
+            './src/UserDashboard',
+            './src/UserProfileEdit',
+          ],
+        },
+    },
+  },
+})
+```

@@ -1,33 +1,36 @@
 # 命名路由
 
-<div class="vueschool"><a href="https://vueschool.io/lessons/vue-router-named-routes-and-params?friend=vuerouter" target="_blank" rel="sponsored noopener" title="Learn how to work with named routes and params with Vue School">观看 Vue School 的如何使用命名路由及其参数的免费视频课程 (英文)</a></div>
+除了 `path` 之外，你还可以为任何路由提供 `name`。这有以下优点：
 
-有时候，通过一个名称来标识一个路由显得更方便一些，特别是在链接一个路由，或者是执行一些跳转的时候。你可以在创建 Router 实例的时候，在 `routes` 配置中给某个路由设置名称。
+- 没有硬编码的 URL
+- `params` 的自动编码/解码。
+- 防止你在 url 中出现打字错误。
+- 绕过路径排序（如显示一个）
 
 ```js
-const router = new VueRouter({
-  routes: [
-    {
-      path: '/user/:userId',
-      name: 'user',
-      component: User
-    }
-  ]
-})
+const routes = [
+  {
+    path: '/user/:username',
+    name: 'user',
+    component: User
+  }
+]
 ```
 
-要链接到一个命名路由，可以给 `router-link` 的 `to` 属性传一个对象：
+要链接到一个命名的路由，可以向 `router-link` 组件的 `to` 属性传递一个对象：
 
 ```html
-<router-link :to="{ name: 'user', params: { userId: 123 }}">User</router-link>
+<router-link :to="{ name: 'user', params: { username: 'erina' }}">
+  User
+</router-link>
 ```
 
 这跟代码调用 `router.push()` 是一回事：
 
 ```js
-router.push({ name: 'user', params: { userId: 123 } })
+router.push({ name: 'user', params: { username: 'erina' } })
 ```
 
-这两种方式都会把路由导航到 `/user/123` 路径。
+在这两种情况下，路由将导航到路径 `/user/erina`。
 
-完整的例子请[移步这里](https://github.com/vuejs/vue-router/blob/dev/examples/named-routes/app.js)。
+完整的例子[这里](https://github.com/vuejs/vue-router/blob/dev/examples/named-routes/app.js).

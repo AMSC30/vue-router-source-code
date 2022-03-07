@@ -14,16 +14,12 @@ When using this approach, we navigate and render the incoming component immediat
 
 Let's assume we have a `Post` component that needs to fetch the data for a post based on `$route.params.id`:
 
-``` html
+```html
 <template>
   <div class="post">
-    <div v-if="loading" class="loading">
-      Loading...
-    </div>
+    <div v-if="loading" class="loading">Loading...</div>
 
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
+    <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="post" class="content">
       <h2>{{ post.title }}</h2>
@@ -33,33 +29,33 @@ Let's assume we have a `Post` component that needs to fetch the data for a post 
 </template>
 ```
 
-``` js
+```js
 export default {
-  data () {
+  data() {
     return {
       loading: false,
       post: null,
-      error: null
+      error: null,
     }
   },
-  created () {
-    // fetch the data when the view is created and the data is
-    // already being observed
-    this.fetchData()
-  },
-  watch: {
-    // call again the method if the route changes
-    '$route': 'fetchData'
+  created() {
+    // watch the params of the route to fetch the data again
+    this.$watch(
+      () => this.$route.params,
+      () => {
+        this.fetchData()
+      },
+      // fetch the data when the view is created and the data is
+      // already being observed
+      { immediate: true }
+    )
   },
   methods: {
-    fetchData () {
+    fetchData() {
       this.error = this.post = null
       this.loading = true
-      const fetchedId = this.$route.params.id
       // replace `getPost` with your data fetching util / API wrapper
-      getPost(fetchedId, (err, post) => {
-        // make sure this request is the last one we did, discard otherwise
-        if (this.$route.params.id !== fetchedId) return
+      getPost(this.$route.params.id, (err, post) => {
         this.loading = false
         if (err) {
           this.error = err.toString()
@@ -67,8 +63,8 @@ export default {
           this.post = post
         }
       })
-    }
-  }
+    },
+  },
 }
 ```
 
@@ -77,38 +73,34 @@ export default {
 With this approach we fetch the data before actually navigating to the new
 route. We can perform the data fetching in the `beforeRouteEnter` guard in the incoming component, and only call `next` when the fetch is complete:
 
-``` js
+```js
 export default {
-  data () {
+  data() {
     return {
       post: null,
-      error: null
+      error: null,
     }
   },
-  beforeRouteEnter (to, from, next) {
+  beforeRouteEnter(to, from, next) {
     getPost(to.params.id, (err, post) => {
       next(vm => vm.setData(err, post))
     })
   },
   // when route changes and this component is already rendered,
   // the logic will be slightly different.
-  beforeRouteUpdate (to, from, next) {
+  async beforeRouteUpdate(to, from) {
     this.post = null
-    getPost(to.params.id, (err, post) => {
-      this.setData(err, post)
-      next()
-    })
-  },
-  methods: {
-    setData (err, post) {
-      if (err) {
-        this.error = err.toString()
-      } else {
-        this.post = post
-      }
+    try {
+      this.post = await getPost(to.params.id)
+    } catch (error) {
+      this.error = error.toString()
     }
-  }
+  },
 }
 ```
 
 The user will stay on the previous view while the resource is being fetched for the incoming view. It is therefore recommended to display a progress bar or some kind of indicator while the data is being fetched. If the data fetch fails, it's also necessary to display some kind of global warning message.
+
+<!-- ### Using Composition API -->
+
+<!-- TODO: -->

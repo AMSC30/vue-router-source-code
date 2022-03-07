@@ -1,29 +1,52 @@
-# HTML5 History 模式
+# 不同的历史模式
 
-`vue-router` 默认 hash 模式 —— 使用 URL 的 hash 来模拟一个完整的 URL，于是当 URL 改变时，页面不会重新加载。
+在创建路由器实例时，`history` 配置允许我们在不同的历史模式中进行选择。
 
-如果不想要很丑的 hash，我们可以用路由的 **history 模式**，这种模式充分利用 `history.pushState` API 来完成 URL 跳转而无须重新加载页面。
+## Hash 模式
 
-``` js
-const router = new VueRouter({
-  mode: 'history',
-  routes: [...]
+hash 模式是用 `createWebHashHistory()` 创建的：
+
+```js
+import { createRouter, createWebHashHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes: [
+    //...
+  ],
 })
 ```
 
-当你使用 history 模式时，URL 就像正常的 url，例如 `http://yoursite.com/user/id`，也好看！
+它在内部传递的实际 URL 之前使用了一个哈希字符（`#`）。由于这部分 URL 从未被发送到服务器，所以它不需要在服务器层面上进行任何特殊处理。不过，**它在 SEO 中确实有不好的影响**。如果你担心这个问题，可以使用 HTML5 模式。
 
-不过这种模式要玩好，还需要后台配置支持。因为我们的应用是个单页客户端应用，如果后台没有正确的配置，当用户在浏览器直接访问 `http://oursite.com/user/id` 就会返回 404，这就不好看了。
+## HTML5 模式
 
-所以呢，你要在服务端增加一个覆盖所有情况的候选资源：如果 URL 匹配不到任何静态资源，则应该返回同一个 `index.html` 页面，这个页面就是你 app 依赖的页面。
+用 `createWebHistory()` 创建 HTML5 模式，推荐使用这个模式：
 
-## 后端配置例子
+```js
+import { createRouter, createWebHistory } from 'vue-router'
 
-**注意**：下列示例假设你在根目录服务这个应用。如果想部署到一个子目录，你需要使用 [Vue CLI 的 `publicPath` 选项](https://cli.vuejs.org/zh/config/#publicpath) 和相关的 [router `base` property](https://router.vuejs.org/zh/api/#base)。你还需要把下列示例中的根目录调整成为子目录 (例如用 `RewriteBase /name-of-your-subfolder/` 替换掉 `RewriteBase /`)。
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [
+    //...
+  ],
+})
+```
 
-#### Apache
+当使用这种历史模式时，URL 会看起来很 "正常"，例如 `https://example.com/user/id`。漂亮!
 
-```apache
+不过，问题来了。由于我们的应用是一个单页的客户端应用，如果没有适当的服务器配置，用户在浏览器中直接访问 `https://example.com/user/id`，就会得到一个 404 错误。这就丑了。
+
+不用担心：要解决这个问题，你需要做的就是在你的服务器上添加一个简单的回退路由。如果 URL 不匹配任何静态资源，它应提供与你的应用程序中的 `index.html` 相同的页面。漂亮依旧!
+
+## 服务器配置示例
+
+**注意**：以下示例假定你正在从根目录提供服务。如果你部署到子目录，你应该使用[Vue CLI 的 `publicPath` 配置](https://cli.vuejs.org/config/#publicpath)和相关的[路由器的 `base` 属性](../../api/#createwebhistory)。你还需要调整下面的例子，以使用子目录而不是根目录（例如，将`RewriteBase/` 替换为 `RewriteBase/name-of-your-subfolder/`）。
+
+### Apache
+
+```apacheconf
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -34,9 +57,9 @@ const router = new VueRouter({
 </IfModule>
 ```
 
-除了 `mod_rewrite`，你也可以使用 [`FallbackResource`](https://httpd.apache.org/docs/2.2/mod/mod_dir.html#fallbackresource)。
+也可以使用 [`FallbackResource`](https://httpd.apache.org/docs/2.2/mod/mod_dir.html#fallbackresource) 代替 `mod_rewrite`。
 
-#### nginx
+### nginx
 
 ```nginx
 location / {
@@ -44,38 +67,40 @@ location / {
 }
 ```
 
-#### 原生 Node.js
+### 原生 Node.js
 
 ```js
 const http = require('http')
 const fs = require('fs')
 const httpPort = 80
 
-http.createServer((req, res) => {
-  fs.readFile('index.html', 'utf-8', (err, content) => {
-    if (err) {
-      console.log('We cannot open "index.html" file.')
-    }
+http
+  .createServer((req, res) => {
+    fs.readFile('index.html', 'utf-8', (err, content) => {
+      if (err) {
+        console.log('We cannot open "index.html" file.')
+      }
 
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8'
+      res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+      })
+
+      res.end(content)
     })
-
-    res.end(content)
   })
-}).listen(httpPort, () => {
-  console.log('Server listening on: http://localhost:%s', httpPort)
-})
+  .listen(httpPort, () => {
+    console.log('Server listening on: http://localhost:%s', httpPort)
+  })
 ```
 
-#### 基于 Node.js 的 Express
+### Express + Node.js
 
-对于 Node.js/Express，请考虑使用 [connect-history-api-fallback 中间件](https://github.com/bripkens/connect-history-api-fallback)。
+对于 Node.js/Express，可以考虑使用 [connect-history-api-fallback 中间件](https://github.com/bripkens/connect-history-api-fallback)。
 
-#### Internet Information Services (IIS)
+### Internet Information Services (IIS)
 
 1. 安装 [IIS UrlRewrite](https://www.iis.net/downloads/microsoft/url-rewrite)
-2. 在你的网站根目录中创建一个 `web.config` 文件，内容如下：
+2. 在网站的根目录下创建一个 `web.config` 文件，内容如下：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -97,7 +122,13 @@ http.createServer((req, res) => {
 </configuration>
 ```
 
-#### Caddy
+### Caddy v2
+
+```
+try_files {path} /
+```
+
+### Caddy v1
 
 ```
 rewrite {
@@ -106,11 +137,11 @@ rewrite {
 }
 ```
 
-#### Firebase 主机
+### Firebase hosting
 
-在你的 `firebase.json` 中加入：
+将此添加到你的 `firebase.json` 中：
 
-```
+```json
 {
   "hosting": {
     "public": "dist",
@@ -124,17 +155,27 @@ rewrite {
 }
 ```
 
-## 警告
+### Netlify
 
-给个警告，因为这么做以后，你的服务器就不再返回 404 错误页面，因为对于所有路径都会返回 `index.html` 文件。为了避免这种情况，你应该在 Vue 应用里面覆盖所有的路由情况，然后再给出一个 404 页面。
+创建一个 `_redirects` 文件，包含在你的部署文件中：
 
-``` js
-const router = new VueRouter({
-  mode: 'history',
-  routes: [
-    { path: '*', component: NotFoundComponent }
-  ]
+```
+/* /index.html 200
+```
+
+在 vue-cli、nuxt 和 vite 项目中，这个文件通常放在名为 `static` 或 `public` 的目录下。
+
+你可以在 [Netlify 文档](https://docs.netlify.com/routing/redirects/rewrites-proxies/#history-pushstate-and-single-page-apps)中找到更多关于语法的信息。你也可以[创建一个 `netlify.toml`](https://docs.netlify.com/configure-builds/file-based-configuration/) 来结合其他 Netlify 功能的重定向。
+
+## Caveat
+
+这有一个注意事项。你的服务器将不再报告 404 错误，因为现在所有未找到的路径都会显示你的 `index.html` 文件。为了解决这个问题，你应该在你的 Vue 应用程序中实现一个万能的路由来显示 404 页面。
+
+```js
+const router = createRouter({
+  history: createWebHistory(),
+  routes: [{ path: '/:pathMatch(.*)', component: NotFoundComponent }],
 })
 ```
 
-或者，如果你使用 Node.js 服务器，你可以用服务端路由匹配到来的 URL，并在没有匹配到路由的时候返回 404，以实现回退。更多详情请查阅 [Vue 服务端渲染文档](https://ssr.vuejs.org/zh/)。
+另外，如果你使用的是 Node.js 服务器，你可以通过在服务器端使用路由器来匹配传入的 URL，如果没有匹配到路由，则用 404 来响应，从而实现回退。查看 [Vue 服务器端渲染文档](https://v3.cn.vuejs.org/guide/ssr/introduction.html#what-is-server-side-rendering-ssr)了解更多信息。

@@ -1,60 +1,84 @@
 # Transitions
 
-<div class="vueschool"><a href="https://vueschool.io/lessons/how-to-create-route-transitions-with-vue-router?friend=vuerouter" target="_blank" rel="sponsored noopener" title="Learn how to create route transitions on Vue School">Learn how to create route transitions with a free lesson on Vue School</a></div>
+<VueSchoolLink
+  href="https://vueschool.io/lessons/route-transitions"
+  title="Learn about route transitions"
+/>
 
-Since the `<router-view>` is essentially a dynamic component, we can apply transition effects to it the same way using the `<transition>` component:
+In order to use transitions on your route components and animate navigations, you need to use the [v-slot API](../../api/#router-view-s-v-slot):
 
 ```html
-<transition>
-  <router-view></router-view>
-</transition>
+<router-view v-slot="{ Component }">
+  <transition name="fade">
+    <component :is="Component" />
+  </transition>
+</router-view>
 ```
 
-[All transition APIs](https://vuejs.org/guide/transitions.html) work the same here.
+[All transition APIs](https://v3.vuejs.org/guide/transitions-enterleave.html) work the same here.
 
 ## Per-Route Transition
 
-The above usage will apply the same transition for all routes. If you want each route's component to have different transitions, you can instead use `<transition>` with different names inside each route component:
+The above usage will apply the same transition for all routes. If you want each route's component to have different transitions, you can instead combine [meta fields](./meta.md) and a dynamic `name` on `<transition>`:
 
 ```js
-const Foo = {
-  template: `
-    <transition name="slide">
-      <div class="foo">...</div>
-    </transition>
-  `
-}
+const routes = [
+  {
+    path: '/custom-transition',
+    component: PanelLeft,
+    meta: { transition: 'slide-left' },
+  },
+  {
+    path: '/other-transition',
+    component: PanelRight,
+    meta: { transition: 'slide-right' },
+  },
+]
+```
 
-const Bar = {
-  template: `
-    <transition name="fade">
-      <div class="bar">...</div>
-    </transition>
-  `
-}
+```html
+<router-view v-slot="{ Component, route }">
+  <!-- Use any custom transition and fallback to `fade` -->
+  <transition :name="route.meta.transition || 'fade'">
+    <component :is="Component" />
+  </transition>
+</router-view>
 ```
 
 ## Route-Based Dynamic Transition
 
-It is also possible to determine the transition to use dynamically based on the relationship between the target route and current route:
+It is also possible to determine the transition to use dynamically based on the relationship between the target route and current route. Using a very similar snippet to the one just before:
 
 ```html
 <!-- use a dynamic transition name -->
-<transition :name="transitionName">
-  <router-view></router-view>
-</transition>
+<router-view v-slot="{ Component, route }">
+  <transition :name="route.meta.transitionName">
+    <component :is="Component" />
+  </transition>
+</router-view>
 ```
+
+We can add an [after navigation hook](./navigation-guards.md#global-after-hooks) to dynamically add information to the `meta` field based on the depth of the route
 
 ```js
-// then, in the parent component,
-// watch the `$route` to determine the transition to use
-watch: {
-  '$route' (to, from) {
-    const toDepth = to.path.split('/').length
-    const fromDepth = from.path.split('/').length
-    this.transitionName = toDepth < fromDepth ? 'slide-right' : 'slide-left'
-  }
-}
+router.afterEach((to, from) => {
+  const toDepth = to.path.split('/').length
+  const fromDepth = from.path.split('/').length
+  to.meta.transitionName = toDepth < fromDepth ? 'slide-right' : 'slide-left'
+})
 ```
 
-See full example [here](https://github.com/vuejs/vue-router/blob/dev/examples/transitions/app.js).
+## Forcing a transition between reused views
+
+Vue might automatically reuse components that look alike, avoiding any transition. Fortunately, it is possible [to add a `key` attribute](https://v3.vuejs.org/api/special-attributes.html#key) to force transitions. This also allows you to trigger transitions while staying on the same route with different params:
+
+```vue
+<router-view v-slot="{ Component, route }">
+  <transition name="fade">
+    <component :is="Component" :key="route.path" />
+  </transition>
+</router-view>
+```
+
+<!-- TODO: interactive example -->
+<!-- See full example [here](https://github.com/vuejs/vue-router/blob/dev/examples/transitions/app.js). -->

@@ -1,4 +1,4 @@
 [build]
-  ignore = "git diff --quiet HEAD^ HEAD ./docs/"
-  publish = "docs/.vuepress/dist"
+  ignore = "./scripts/docs-check.sh"
+  publish = "docs/.vitepress/dist"
   command = "yarn run docs:build"

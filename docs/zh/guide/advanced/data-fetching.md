@@ -10,20 +10,16 @@
 
 ## 导航完成后获取数据
 
-当你使用这种方式时，我们会马上导航和渲染组件，然后在组件的 `created` 钩子中获取数据。这让我们有机会在数据获取期间展示一个 loading 状态，还可以在不同视图间展示不同的 loading 状态。
+当你使用这种方式时，我们会马上导航和渲染组件，然后在组件的 created 钩子中获取数据。这让我们有机会在数据获取期间展示一个 loading 状态，还可以在不同视图间展示不同的 loading 状态。
 
 假设我们有一个 `Post` 组件，需要基于 `$route.params.id` 获取文章数据：
 
-``` html
+```html
 <template>
   <div class="post">
-    <div v-if="loading" class="loading">
-      Loading...
-    </div>
+    <div v-if="loading" class="loading">Loading...</div>
 
-    <div v-if="error" class="error">
-      {{ error }}
-    </div>
+    <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="post" class="content">
       <h2>{{ post.title }}</h2>
@@ -33,29 +29,33 @@
 </template>
 ```
 
-``` js
+```js
 export default {
-  data () {
+  data() {
     return {
       loading: false,
       post: null,
-      error: null
+      error: null,
     }
   },
-  created () {
-    // 组件创建完后获取数据，
-    // 此时 data 已经被 observed 了
-    this.fetchData()
-  },
-  watch: {
-    // 如果路由有变化，会再次执行该方法
-    '$route': 'fetchData'
+  created() {
+    // watch 路由的参数，以便再次获取数据
+    this.$watch(
+      () => this.$route.params,
+      () => {
+        this.fetchData()
+      },
+      // 组件创建完后获取数据，
+      // 此时 data 已经被 observed 了
+      { immediate: true }
+    )
   },
   methods: {
-    fetchData () {
+    fetchData() {
       this.error = this.post = null
       this.loading = true
-      // replace getPost with your data fetching util / API wrapper
+      // replace `getPost` with your data fetching util / API wrapper
+      // 用你的数据获取 util 或 API 替换 `getPost`
       getPost(this.$route.params.id, (err, post) => {
         this.loading = false
         if (err) {
@@ -64,47 +64,43 @@ export default {
           this.post = post
         }
       })
-    }
-  }
+    },
+  },
 }
 ```
 
 ## 在导航完成前获取数据
 
-通过这种方式，我们在导航转入新的路由前获取数据。我们可以在接下来的组件的  `beforeRouteEnter` 守卫中获取数据，当数据获取成功后只调用 `next` 方法。
+通过这种方式，我们在导航转入新的路由前获取数据。我们可以在接下来的组件的 `beforeRouteEnter` 守卫中获取数据，当数据获取成功后只调用 `next` 方法：
 
-``` js
+```js
 export default {
-  data () {
+  data() {
     return {
       post: null,
-      error: null
+      error: null,
     }
   },
-  beforeRouteEnter (to, from, next) {
+  beforeRouteEnter(to, from, next) {
     getPost(to.params.id, (err, post) => {
       next(vm => vm.setData(err, post))
     })
   },
   // 路由改变前，组件就已经渲染完了
   // 逻辑稍稍不同
-  beforeRouteUpdate (to, from, next) {
+  async beforeRouteUpdate(to, from) {
     this.post = null
-    getPost(to.params.id, (err, post) => {
-      this.setData(err, post)
-      next()
-    })
-  },
-  methods: {
-    setData (err, post) {
-      if (err) {
-        this.error = err.toString()
-      } else {
-        this.post = post
-      }
+    try {
+      this.post = await getPost(to.params.id)
+    } catch (error) {
+      this.error = error.toString()
     }
-  }
+  },
 }
 ```
 
 在为后面的视图获取数据时，用户会停留在当前的界面，因此建议在数据获取期间，显示一些进度条或者别的指示。如果数据获取失败，同样有必要展示一些全局的错误提醒。
+
+<!-- ### Using Composition API -->
+
+<!-- TODO: -->

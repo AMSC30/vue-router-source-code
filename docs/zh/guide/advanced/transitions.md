@@ -1,60 +1,67 @@
 # 过渡动效
 
-<div class="vueschool"><a href="https://vueschool.io/lessons/how-to-create-route-transitions-with-vue-router?friend=vuerouter" target="_blank" rel="sponsored noopener" title="Learn how to create route transitions on Vue School">观看 Vue School 的如何创建路由过渡动效的免费视频课程 (英文)</a></div>
-
-`<router-view>` 是基本的动态组件，所以我们可以用 `<transition>` 组件给它添加一些过渡效果：
+想要在你的路径组件上使用转场，并对导航进行动画处理，你需要使用 [v-slot API](../../api/#router-view-s-v-slot)：
 
 ```html
-<transition>
-  <router-view></router-view>
-</transition>
+<router-view v-slot="{ Component }">
+  <transition name="fade">
+    <component :is="Component" />
+  </transition>
+</router-view>
 ```
 
-[Transition 的所有功能](https://cn.vuejs.org/guide/transitions.html) 在这里同样适用。
+[Transition 的所有功能](https://v3.vuejs.org/guide/transitions-enterleave.html) 在这里同样适用。
 
 ## 单个路由的过渡
 
-上面的用法会给所有路由设置一样的过渡效果，如果你想让每个路由组件有各自的过渡效果，可以在各路由组件内使用 `<transition>` 并设置不同的 name。
+上面的用法会对所有的路由使用相同的过渡。如果你想让每个路由的组件有不同的过渡，你可以将[元信息](./meta.md)和动态的 `name` 结合在一起，放在`<transition>` 上：
 
 ```js
-const Foo = {
-  template: `
-    <transition name="slide">
-      <div class="foo">...</div>
-    </transition>
-  `
-}
+const routes = [
+  {
+    path: '/custom-transition',
+    component: PanelLeft,
+    meta: { transition: 'slide-left' },
+  },
+  {
+    path: '/other-transition',
+    component: PanelRight,
+    meta: { transition: 'slide-right' },
+  },
+]
+```
 
-const Bar = {
-  template: `
-    <transition name="fade">
-      <div class="bar">...</div>
-    </transition>
-  `
-}
+```html
+<router-view v-slot="{ Component, route }">
+  <!-- 使用任何自定义过渡和回退到 `fade` -->
+  <transition :name="route.meta.transition || 'fade'">
+    <component :is="Component" />
+  </transition>
+</router-view>
 ```
 
 ## 基于路由的动态过渡
 
-还可以基于当前路由与目标路由的变化关系，动态设置过渡效果：
+也可以根据目标路由和当前路由之间的关系，动态地确定使用的过渡。使用和刚才非常相似的片段：
 
 ```html
-<!-- 使用动态的 transition name -->
-<transition :name="transitionName">
-  <router-view></router-view>
-</transition>
+<!-- 使用动态过渡名称 -->
+<router-view v-slot="{ Component, route }">
+  <transition :name="route.meta.transition">
+    <component :is="Component" />
+  </transition>
+</router-view>
 ```
+
+我们可以添加一个 [after navigation hook](./navigation-guards.md#全局后置钩子)，根据路径的深度动态添加信息到 `meta` 字段。
 
 ```js
-// 接着在父组件内
-// watch $route 决定使用哪种过渡
-watch: {
-  '$route' (to, from) {
-    const toDepth = to.path.split('/').length
-    const fromDepth = from.path.split('/').length
-    this.transitionName = toDepth < fromDepth ? 'slide-right' : 'slide-left'
-  }
-}
+router.afterEach((to, from) => {
+  const toDepth = to.path.split('/').length
+  const fromDepth = from.path.split('/').length
+  to.meta.transitionName = toDepth < fromDepth ? 'slide-right' : 'slide-left'
+})
 ```
 
-查看完整例子请[移步这里](https://github.com/vuejs/vue-router/blob/dev/examples/transitions/app.js)。
+<!-- TODO: interactive example -->
+<!-- See full example [here](https://github.com/vuejs/vue-router/blob/dev/examples/transitions/app.js). -->

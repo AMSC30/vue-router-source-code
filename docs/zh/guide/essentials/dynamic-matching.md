@@ -1,105 +1,106 @@
-# 动态路由匹配
+# 带参数的动态路由匹配
 
-<div class="vueschool"><a href="https://vueschool.io/lessons/vue-router-dynamic-routes?friend=vuerouter" target="_blank" rel="sponsored noopener" title="Learn how to match dynamic routes with Vue School">观看 Vue School 的如何匹配动态路由的免费视频课程 (英文)</a></div>
-
-我们经常需要把某种模式匹配到的所有路由，全都映射到同个组件。例如，我们有一个 `User` 组件，对于所有 ID 各不相同的用户，都要使用这个组件来渲染。那么，我们可以在 `vue-router` 的路由路径中使用“动态路径参数”(dynamic segment) 来达到这个效果：
+很多时候，我们需要将给定匹配模式的路由映射到同一个组件。例如，我们可能有一个 `User` 组件，它应该对所有用户进行渲染，但用户 ID 不同。在 Vue Router 中，我们可以在路径中使用一个动态字段来实现，我们称之为 _路径参数_ ：
 
 ```js
 const User = {
-  template: '<div>User</div>'
+  template: '<div>User</div>',
 }
 
-const router = new VueRouter({
-  routes: [
-    // 动态路径参数 以冒号开头
-    { path: '/user/:id', component: User }
-  ]
-})
+// 这些都会传递给 `createRouter`
+const routes = [
+  // 动态字段以冒号开始
+  { path: '/users/:id', component: User },
+]
 ```
 
-现在呢，像 `/user/foo` 和 `/user/bar` 都将映射到相同的路由。
+现在像 `/users/johnny` 和 `/users/jolyne` 这样的 URL 都会映射到同一个路由。
 
-一个“路径参数”使用冒号 `:` 标记。当匹配到一个路由时，参数值会被设置到
-`this.$route.params`，可以在每个组件内使用。于是，我们可以更新 `User` 的模板，输出当前用户的 ID：
+_路径参数_ 用冒号 `:` 表示。当一个路由被匹配时，它的 _params_ 的值将在每个组件中以 `this.$route.params` 的形式暴露出来。因此，我们可以通过更新 `User` 的模板来呈现当前的用户 ID：
 
 ```js
 const User = {
-  template: '<div>User {{ $route.params.id }}</div>'
+  template: '<div>User {{ $route.params.id }}</div>',
 }
 ```
 
-你可以看看这个[在线例子](https://jsfiddle.net/yyx990803/4xfa2f19/)。
+你可以在同一个路由中设置有多个 _路径参数_，它们会映射到 `$route.params` 上的相应字段。例如：
 
-你可以在一个路由中设置多段“路径参数”，对应的值都会设置到 `$route.params` 中。例如：
+| 匹配模式                       | 匹配路径                 | \$route.params                           |
+| ------------------------------ | ------------------------ | ---------------------------------------- |
+| /users/:username               | /users/eduardo           | `{ username: 'eduardo' }`                |
+| /users/:username/posts/:postId | /users/eduardo/posts/123 | `{ username: 'eduardo', postId: '123' }` |
 
-| 模式                          | 匹配路径            | \$route.params                         |
-| ----------------------------- | ------------------- | -------------------------------------- |
-| /user/:username               | /user/evan          | `{ username: 'evan' }`                 |
-| /user/:username/post/:post_id | /user/evan/post/123 | `{ username: 'evan', post_id: '123' }` |
+除了 `$route.params` 之外，`$route` 对象还公开了其他有用的信息，如 `$route.query`（如果 URL 中存在参数）、`$route.hash` 等。你可以在 [API 参考](../../api/#routelocationnormalized)中查看完整的细节。
 
-除了 `$route.params` 外，`$route` 对象还提供了其它有用的信息，例如，`$route.query` (如果 URL 中有查询参数)、`$route.hash` 等等。你可以查看 [API 文档](../../api/#路由对象) 的详细说明。
+这个例子的 demo 可以在[这里](https://codesandbox.io/s/route-params-vue-router-examples-mlb14?from-embed&initialpath=%2Fusers%2Feduardo%2Fposts%2F1)找到。
+
+<!-- <iframe
+  src="https://codesandbox.io/embed//route-params-vue-router-examples-mlb14?fontsize=14&theme=light&view=preview&initialpath=%2Fusers%2Feduardo%2Fposts%2F1"
+  style="width:100%; height:500px; border:0; border-radius: 4px; overflow:hidden;"
+  title="Route Params example"
+  allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+  sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+></iframe> -->
 
 ## 响应路由参数的变化
 
-提醒一下，当使用路由参数时，例如从 `/user/foo` 导航到 `/user/bar`，**原来的组件实例会被复用**。因为两个路由都渲染同个组件，比起销毁再创建，复用则显得更加高效。**不过，这也意味着组件的生命周期钩子不会再被调用**。
+使用带有参数的路由时需要注意的是，当用户从 `/users/johnny` 导航到 `/users/jolyne` 时，**相同的组件实例将被重复使用**。因为两个路由都渲染同个组件，比起销毁再创建，复用则显得更加高效。**不过，这也意味着组件的生命周期钩子不会被调用**。
 
-复用组件时，想对路由参数的变化作出响应的话，你可以简单地 watch (监测变化) `$route` 对象：
+要对同一个组件中参数的变化做出响应的话，你可以简单地 watch `$route` 对象上的任意属性，在这个场景中，就是 `$route.params` ：
 
 ```js
 const User = {
   template: '...',
-  watch: {
-    $route(to, from) {
-      // 对路由变化作出响应...
-    }
-  }
+  created() {
+    this.$watch(
+      () => this.$route.params,
+      (toParams, previousParams) => {
+        // 对路由变化做出响应...
+      }
+    )
+  },
 }
 ```
 
-或者使用 2.2 中引入的 `beforeRouteUpdate` [导航守卫](../advanced/navigation-guards.html)：
+或者，使用 `beforeRouteUpdate` [导航守卫](../advanced/navigation-guards.md)，它也可以取消导航：
 
 ```js
 const User = {
   template: '...',
-  beforeRouteUpdate(to, from, next) {
-    // react to route changes...
-    // don't forget to call next()
-  }
+  async beforeRouteUpdate(to, from) {
+    // 对路由变化做出响应...
+    this.userData = await fetchUser(to.params.id)
+  },
 }
 ```
 
 ## 捕获所有路由或 404 Not found 路由
 
-常规参数只会匹配被 `/` 分隔的 URL 片段中的字符。如果想匹配**任意路径**，我们可以使用通配符 (`*`)：
+常规参数只匹配 url 片段之间的字符，用 `/` 分隔。如果我们想匹配**任意路径**，我们可以使用自定义的 _路径参数_ 正则表达式，在 _路径参数_ 后面的括号中加入 正则表达式 :
 
 ```js
-{
-  // 会匹配所有路径
-  path: '*'
-}
-{
-  // 会匹配以 `/user-` 开头的任意路径
-  path: '/user-*'
-}
+const routes = [
+  // 将匹配所有内容并将其放在 `$route.params.pathMatch` 下
+  { path: '/:pathMatch(.*)*', name: 'NotFound', component: NotFound },
+  // 将匹配以 `/user-` 开头的所有内容，并将其放在 `$route.params.afterUser` 下
+  { path: '/user-:afterUser(.*)', component: UserGeneric },
+]
 ```
 
-当使用*通配符*路由时，请确保路由的顺序是正确的，也就是说含有*通配符*的路由应该放在最后。路由 `{ path: '*' }` 通常用于客户端 404 错误。如果你使用了*History 模式*，请确保[正确配置你的服务器](./history-mode.md)。
-
-当使用一个*通配符*时，`$route.params` 内会自动添加一个名为 `pathMatch` 参数。它包含了 URL 通过*通配符*被匹配的部分：
+在这个特定的场景中，我们在括号之间使用了[自定义正则表达式](./route-matching-syntax.md#在参数中自定义正则)，并将`pathMatch` 参数标记为[可选可重复](./route-matching-syntax.md#可选参数)。这样做是为了让我们在需要的时候，可以通过将 `path` 拆分成一个数组，直接导航到路由：
 
 ```js
-// 给出一个路由 { path: '/user-*' }
-this.$router.push('/user-admin')
-this.$route.params.pathMatch // 'admin'
-// 给出一个路由 { path: '*' }
-this.$router.push('/non-existing')
-this.$route.params.pathMatch // '/non-existing'
+this.$router.push({
+  name: 'NotFound',
+  params: { pathMatch: this.$route.path.split('/') },
+})
 ```
+
+更多内容请参见[重复参数](./route-matching-syntax.md#可重复的参数)部分。
+
+如果你正在使用[历史模式](./history-mode.md)，请务必按照说明正确配置你的服务器。
 
 ## 高级匹配模式
 
-`vue-router` 使用 [path-to-regexp](https://github.com/pillarjs/path-to-regexp/tree/v1.7.0) 作为路径匹配引擎，所以支持很多高级的匹配模式，例如：可选的动态路径参数、匹配零个或多个、一个或多个，甚至是自定义正则匹配。查看它的[文档](https://github.com/pillarjs/path-to-regexp/tree/v1.7.0#parameters)学习高阶的路径匹配，还有[这个例子 ](https://github.com/vuejs/vue-router/blob/dev/examples/route-matching/app.js)展示 `vue-router` 怎么使用这类匹配。
-
-## 匹配优先级
-
-有时候，同一个路径可以匹配多个路由，此时，匹配的优先级就按照路由的定义顺序：路由定义得越早，优先级就越高。
+Vue Router 使用自己的路径匹配语法，其灵感来自于 `express`，因此它支持许多高级匹配模式，如可选的参数，零或多个 / 一个或多个，甚至自定义的正则匹配规则。请查看[高级匹配](./route-matching-syntax.md)文档来探索它们。
