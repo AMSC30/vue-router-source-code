@@ -38,10 +38,7 @@ export default class VueRouter {
   resolveHooks: Array<?NavigationGuard>
   afterHooks: Array<?AfterNavigationHook>
 
-  constructor (options: RouterOptions = {}) {
-    if (process.env.NODE_ENV !== 'production') {
-      warn(this instanceof VueRouter, `Router must be called with the new operator.`)
-    }
+  constructor(options: RouterOptions = {}) {
     this.app = null
     this.apps = []
     this.options = options
@@ -78,15 +75,15 @@ export default class VueRouter {
     }
   }
 
-  match (raw: RawLocation, current?: Route, redirectedFrom?: Location): Route {
+  match(raw: RawLocation, current?: Route, redirectedFrom?: Location): Route {
     return this.matcher.match(raw, current, redirectedFrom)
   }
 
-  get currentRoute (): ?Route {
+  get currentRoute(): ?Route {
     return this.history && this.history.current
   }
 
-  init (app: any /* Vue component instance */) {
+  init(app: any) {
     process.env.NODE_ENV !== 'production' &&
       assert(
         install.installed,
@@ -120,7 +117,7 @@ export default class VueRouter {
     const history = this.history
 
     if (history instanceof HTML5History || history instanceof HashHistory) {
-      const handleInitialScroll = routeOrError => {
+      const handleInitialScroll = (routeOrError) => {
         const from = history.current
         const expectScroll = this.options.scrollBehavior
         const supportsScroll = supportsPushState && expectScroll
@@ -129,7 +126,7 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
-      const setupListeners = routeOrError => {
+      const setupListeners = (routeOrError) => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
@@ -140,34 +137,34 @@ export default class VueRouter {
       )
     }
 
-    history.listen(route => {
-      this.apps.forEach(app => {
+    history.listen((route) => {
+      this.apps.forEach((app) => {
         app._route = route
       })
     })
   }
 
-  beforeEach (fn: Function): Function {
+  beforeEach(fn: Function): Function {
     return registerHook(this.beforeHooks, fn)
   }
 
-  beforeResolve (fn: Function): Function {
+  beforeResolve(fn: Function): Function {
     return registerHook(this.resolveHooks, fn)
   }
 
-  afterEach (fn: Function): Function {
+  afterEach(fn: Function): Function {
     return registerHook(this.afterHooks, fn)
   }
 
-  onReady (cb: Function, errorCb?: Function) {
+  onReady(cb: Function, errorCb?: Function) {
     this.history.onReady(cb, errorCb)
   }
 
-  onError (errorCb: Function) {
+  onError(errorCb: Function) {
     this.history.onError(errorCb)
   }
 
-  push (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  push(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     // $flow-disable-line
     if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
       return new Promise((resolve, reject) => {
@@ -178,7 +175,7 @@ export default class VueRouter {
     }
   }
 
-  replace (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  replace(location: RawLocation, onComplete?: Function, onAbort?: Function) {
     // $flow-disable-line
     if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
       return new Promise((resolve, reject) => {
@@ -189,19 +186,19 @@ export default class VueRouter {
     }
   }
 
-  go (n: number) {
+  go(n: number) {
     this.history.go(n)
   }
 
-  back () {
+  back() {
     this.go(-1)
   }
 
-  forward () {
+  forward() {
     this.go(1)
   }
 
-  getMatchedComponents (to?: RawLocation | Route): Array<any> {
+  getMatchedComponents(to?: RawLocation | Route): Array<any> {
     const route: any = to
       ? to.matched
         ? to
@@ -212,15 +209,15 @@ export default class VueRouter {
     }
     return [].concat.apply(
       [],
-      route.matched.map(m => {
-        return Object.keys(m.components).map(key => {
+      route.matched.map((m) => {
+        return Object.keys(m.components).map((key) => {
           return m.components[key]
         })
       })
     )
   }
 
-  resolve (
+  resolve(
     to: RawLocation,
     current?: Route,
     append?: boolean
@@ -230,7 +227,7 @@ export default class VueRouter {
     href: string,
     // for backwards compat
     normalizedTo: Location,
-    resolved: Route
+    resolved: Route,
   } {
     current = current || this.history.current
     const location = normalizeLocation(to, current, append, this)
@@ -244,24 +241,27 @@ export default class VueRouter {
       href,
       // for backwards compat
       normalizedTo: location,
-      resolved: route
+      resolved: route,
     }
   }
 
-  getRoutes () {
+  getRoutes() {
     return this.matcher.getRoutes()
   }
 
-  addRoute (parentOrRoute: string | RouteConfig, route?: RouteConfig) {
+  addRoute(parentOrRoute: string | RouteConfig, route?: RouteConfig) {
     this.matcher.addRoute(parentOrRoute, route)
     if (this.history.current !== START) {
       this.history.transitionTo(this.history.getCurrentLocation())
     }
   }
 
-  addRoutes (routes: Array<RouteConfig>) {
+  addRoutes(routes: Array<RouteConfig>) {
     if (process.env.NODE_ENV !== 'production') {
-      warn(false, 'router.addRoutes() is deprecated and has been removed in Vue Router 4. Use router.addRoute() instead.')
+      warn(
+        false,
+        'router.addRoutes() is deprecated and has been removed in Vue Router 4. Use router.addRoute() instead.'
+      )
     }
     this.matcher.addRoutes(routes)
     if (this.history.current !== START) {
@@ -270,7 +270,7 @@ export default class VueRouter {
   }
 }
 
-function registerHook (list: Array<any>, fn: Function): Function {
+function registerHook(list: Array<any>, fn: Function): Function {
   list.push(fn)
   return () => {
     const i = list.indexOf(fn)
@@ -278,7 +278,7 @@ function registerHook (list: Array<any>, fn: Function): Function {
   }
 }
 
-function createHref (base: string, fullPath: string, mode) {
+function createHref(base: string, fullPath: string, mode) {
   var path = mode === 'hash' ? '#' + fullPath : fullPath
   return base ? cleanPath(base + '/' + path) : path
 }
