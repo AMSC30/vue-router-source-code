@@ -90,30 +90,15 @@ export default class VueRouter {
   }
 
   init(app: any) {
-    process.env.NODE_ENV !== 'production' &&
-      assert(
-        install.installed,
-        `not installed. Make sure to call \`Vue.use(VueRouter)\` ` +
-          `before creating root instance.`
-      )
-
     this.apps.push(app)
 
-    // set up app destroyed handler
-    // https://github.com/vuejs/vue-router/issues/2639
     app.$once('hook:destroyed', () => {
-      // clean out app from this.apps array once destroyed
       const index = this.apps.indexOf(app)
       if (index > -1) this.apps.splice(index, 1)
-      // ensure we still have a main app or null if no apps
-      // we do not release the router so it can be reused
       if (this.app === app) this.app = this.apps[0] || null
-
       if (!this.app) this.history.teardown()
     })
 
-    // main app previously initialized
-    // return as we don't need to set up new history listener
     if (this.app) {
       return
     }
@@ -123,7 +108,7 @@ export default class VueRouter {
     const history = this.history
 
     if (history instanceof HTML5History || history instanceof HashHistory) {
-      const handleInitialScroll = routeOrError => {
+      const handleInitialScroll = (routeOrError) => {
         const from = history.current
         const expectScroll = this.options.scrollBehavior
         const supportsScroll = supportsPushState && expectScroll
@@ -132,7 +117,7 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
-      const setupListeners = routeOrError => {
+      const setupListeners = (routeOrError) => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
@@ -143,8 +128,8 @@ export default class VueRouter {
       )
     }
 
-    history.listen(route => {
-      this.apps.forEach(app => {
+    history.listen((route) => {
+      this.apps.forEach((app) => {
         app._route = route
       })
     })
@@ -215,8 +200,8 @@ export default class VueRouter {
     }
     return [].concat.apply(
       [],
-      route.matched.map(m => {
-        return Object.keys(m.components).map(key => {
+      route.matched.map((m) => {
+        return Object.keys(m.components).map((key) => {
           return m.components[key]
         })
       })
@@ -233,7 +218,7 @@ export default class VueRouter {
     href: string,
     // for backwards compat
     normalizedTo: Location,
-    resolved: Route
+    resolved: Route,
   } {
     current = current || this.history.current
     const location = normalizeLocation(to, current, append, this)
@@ -247,7 +232,7 @@ export default class VueRouter {
       href,
       // for backwards compat
       normalizedTo: location,
-      resolved: route
+      resolved: route,
     }
   }
 

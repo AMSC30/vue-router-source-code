@@ -3,23 +3,28 @@ import Link from './components/link'
 
 export let _Vue
 
-export function install (Vue) {
+export function install(Vue) {
   if (install.installed && _Vue === Vue) return
   install.installed = true
 
   _Vue = Vue
 
-  const isDef = v => v !== undefined
+  const isDef = (v) => v !== undefined
 
   const registerInstance = (vm, callVal) => {
     let i = vm.$options._parentVnode
-    if (isDef(i) && isDef(i = i.data) && isDef(i = i.registerRouteInstance)) {
+    if (
+      isDef(i) &&
+      isDef((i = i.data)) &&
+      isDef((i = i.registerRouteInstance))
+    ) {
       i(vm, callVal)
     }
   }
 
   Vue.mixin({
-    beforeCreate () {
+    beforeCreate() {
+      // 可以在每个实例上都挂载store对象
       if (isDef(this.$options.router)) {
         this._routerRoot = this
         this._router = this.$options.router
@@ -30,17 +35,21 @@ export function install (Vue) {
       }
       registerInstance(this, this)
     },
-    destroyed () {
+    destroyed() {
       registerInstance(this)
-    }
+    },
   })
 
   Object.defineProperty(Vue.prototype, '$router', {
-    get () { return this._routerRoot._router }
+    get() {
+      return this._routerRoot._router
+    },
   })
 
   Object.defineProperty(Vue.prototype, '$route', {
-    get () { return this._routerRoot._route }
+    get() {
+      return this._routerRoot._route
+    },
   })
 
   Vue.component('RouterView', View)
@@ -48,5 +57,8 @@ export function install (Vue) {
 
   const strats = Vue.config.optionMergeStrategies
   // use the same hook merging strategy for route hooks
-  strats.beforeRouteEnter = strats.beforeRouteLeave = strats.beforeRouteUpdate = strats.created
+  strats.beforeRouteEnter =
+    strats.beforeRouteLeave =
+    strats.beforeRouteUpdate =
+      strats.created
 }

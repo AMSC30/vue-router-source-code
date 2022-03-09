@@ -9,7 +9,7 @@ import { START, isSameRoute, handleRouteEntered } from '../util/route'
 import {
   flatten,
   flatMapComponents,
-  resolveAsyncComponents
+  resolveAsyncComponents,
 } from '../util/resolve-components'
 import {
   createNavigationDuplicatedError,
@@ -18,7 +18,7 @@ import {
   createNavigationAbortedError,
   isError,
   isNavigationFailure,
-  NavigationFailureType
+  NavigationFailureType,
 } from '../util/errors'
 import { handleScroll } from '../util/scroll'
 
@@ -65,7 +65,7 @@ export class History {
     try {
       route = this.router.match(location, this.current)
     } catch (e) {
-      this.errorCbs.forEach(cb => {
+      this.errorCbs.forEach((cb) => {
         cb(e)
       })
       // Exception should still be thrown
@@ -78,33 +78,29 @@ export class History {
         this.updateRoute(route)
         onComplete && onComplete(route)
         this.ensureURL()
-        this.router.afterHooks.forEach(hook => {
+        this.router.afterHooks.forEach((hook) => {
           hook && hook(route, prev)
         })
 
         // fire ready cbs once
         if (!this.ready) {
           this.ready = true
-          this.readyCbs.forEach(cb => {
+          this.readyCbs.forEach((cb) => {
             cb(route)
           })
         }
       },
-      err => {
+      (err) => {
         if (onAbort) {
           onAbort(err)
         }
         if (err && !this.ready) {
-          // Initial redirection should not mark the history as ready yet
-          // because it's triggered by the redirection instead
-          // https://github.com/vuejs/vue-router/issues/3225
-          // https://github.com/vuejs/vue-router/issues/3331
           if (
             !isNavigationFailure(err, NavigationFailureType.redirected) ||
             prev !== START
           ) {
             this.ready = true
-            this.readyErrorCbs.forEach(cb => {
+            this.readyErrorCbs.forEach((cb) => {
               cb(err)
             })
           }
@@ -116,13 +112,10 @@ export class History {
   confirmTransition(route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     this.pending = route
-    const abort = err => {
-      // changed after adding errors with
-      // https://github.com/vuejs/vue-router/pull/3047 before that change,
-      // redirect and aborted navigation would produce an err == null
+    const abort = (err) => {
       if (!isNavigationFailure(err) && isError(err)) {
         if (this.errorCbs.length) {
-          this.errorCbs.forEach(cb => {
+          this.errorCbs.forEach((cb) => {
             cb(err)
           })
         } else {
@@ -138,7 +131,6 @@ export class History {
     const lastCurrentIndex = current.matched.length - 1
     if (
       isSameRoute(route, current) &&
-      // in the case the route map has been dynamically appended to
       lastRouteIndex === lastCurrentIndex &&
       route.matched[lastRouteIndex] === current.matched[lastCurrentIndex]
     ) {
@@ -162,7 +154,7 @@ export class History {
       // in-component update hooks
       extractUpdateHooks(updated),
       // in-config enter guards
-      activated.map(m => m.beforeEnter),
+      activated.map((m) => m.beforeEnter),
       // async components
       resolveAsyncComponents(activated)
     )
@@ -232,7 +224,7 @@ export class History {
   }
 
   teardown() {
-    this.listeners.forEach(cleanupListener => {
+    this.listeners.forEach((cleanupListener) => {
       cleanupListener()
     })
     this.listeners = []
@@ -271,7 +263,7 @@ function resolveQueue(
 ): {
   updated: Array<RouteRecord>,
   activated: Array<RouteRecord>,
-  deactivated: Array<RouteRecord>
+  deactivated: Array<RouteRecord>,
 } {
   let i
   const max = Math.max(current.length, next.length)
@@ -283,7 +275,7 @@ function resolveQueue(
   return {
     updated: next.slice(0, i),
     activated: next.slice(i),
-    deactivated: current.slice(i)
+    deactivated: current.slice(i),
   }
 }
 
@@ -297,7 +289,7 @@ function extractGuards(
     const guard = extractGuard(def, name)
     if (guard) {
       return Array.isArray(guard)
-        ? guard.map(guard => bind(guard, instance, match, key))
+        ? guard.map((guard) => bind(guard, instance, match, key))
         : bind(guard, instance, match, key)
     }
   })
@@ -347,7 +339,7 @@ function bindEnterGuard(
   key: string
 ): NavigationGuard {
   return function routeEnterGuard(to, from, next) {
-    return guard(to, from, cb => {
+    return guard(to, from, (cb) => {
       if (typeof cb === 'function') {
         if (!match.enteredCbs[key]) {
           match.enteredCbs[key] = []
