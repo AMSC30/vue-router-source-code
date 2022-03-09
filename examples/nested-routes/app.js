@@ -3,8 +3,6 @@ import VueRouter from 'vue-router'
 
 Vue.use(VueRouter)
 
-// A route component can also contain <router-view> to render
-// nested children route components
 const Parent = {
   template: `
     <div class="parent">
@@ -48,27 +46,16 @@ const router = new VueRouter({
   mode: 'history',
   base: __dirname,
   routes: [
+    { path: '', redirect: '/' },
     { path: '/', redirect: '/parent' },
     {
       path: '/parent',
       component: Parent,
       children: [
-        // an empty path will be treated as the default, e.g.
-        // components rendered at /parent: Root -> Parent -> Default
         { path: '', component: Default },
-
-        // components rendered at /parent/foo: Root -> Parent -> Foo
         { path: 'foo', component: Foo },
-
-        // components rendered at /parent/bar: Root -> Parent -> Bar
         { path: 'bar', component: Bar },
-
-        // NOTE absolute path here!
-        // this allows you to leverage the component nesting without being
-        // limited to the nested URL.
-        // components rendered at /baz: Root -> Parent -> Baz
         { path: '/baz', component: Baz },
-
         {
           path: 'qux/:quxId',
           component: Qux,
@@ -77,9 +64,7 @@ const router = new VueRouter({
             { path: 'quuy', name: 'quuy', component: Quuy }
           ]
         },
-
         { path: 'quy/:quyId', component: Quy },
-
         { name: 'zap', path: 'zap/:zapId?', component: Zap }
       ]
     }

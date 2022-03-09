@@ -39,14 +39,19 @@ export default class VueRouter {
   afterHooks: Array<?AfterNavigationHook>
 
   constructor(options: RouterOptions = {}) {
+    // 1. 初始化router的某些属性
     this.app = null
     this.apps = []
     this.options = options
     this.beforeHooks = []
     this.resolveHooks = []
     this.afterHooks = []
+
+    // 2.创建matcher
     this.matcher = createMatcher(options.routes || [], this)
 
+    // 3.初始化模式
+    // 默认hash模式
     let mode = options.mode || 'hash'
     this.fallback =
       mode === 'history' && !supportsPushState && options.fallback !== false
@@ -58,6 +63,7 @@ export default class VueRouter {
     }
     this.mode = mode
 
+    // 初始化history对象
     switch (mode) {
       case 'history':
         this.history = new HTML5History(this, options.base)
@@ -117,7 +123,7 @@ export default class VueRouter {
     const history = this.history
 
     if (history instanceof HTML5History || history instanceof HashHistory) {
-      const handleInitialScroll = (routeOrError) => {
+      const handleInitialScroll = routeOrError => {
         const from = history.current
         const expectScroll = this.options.scrollBehavior
         const supportsScroll = supportsPushState && expectScroll
@@ -126,7 +132,7 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
-      const setupListeners = (routeOrError) => {
+      const setupListeners = routeOrError => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
@@ -137,8 +143,8 @@ export default class VueRouter {
       )
     }
 
-    history.listen((route) => {
-      this.apps.forEach((app) => {
+    history.listen(route => {
+      this.apps.forEach(app => {
         app._route = route
       })
     })
@@ -209,8 +215,8 @@ export default class VueRouter {
     }
     return [].concat.apply(
       [],
-      route.matched.map((m) => {
-        return Object.keys(m.components).map((key) => {
+      route.matched.map(m => {
+        return Object.keys(m.components).map(key => {
           return m.components[key]
         })
       })
@@ -227,7 +233,7 @@ export default class VueRouter {
     href: string,
     // for backwards compat
     normalizedTo: Location,
-    resolved: Route,
+    resolved: Route
   } {
     current = current || this.history.current
     const location = normalizeLocation(to, current, append, this)
@@ -241,7 +247,7 @@ export default class VueRouter {
       href,
       // for backwards compat
       normalizedTo: location,
-      resolved: route,
+      resolved: route
     }
   }
 

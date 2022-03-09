@@ -5,8 +5,7 @@ const cjs = require('@rollup/plugin-commonjs')
 const node = require('@rollup/plugin-node-resolve').nodeResolve
 const replace = require('rollup-plugin-replace')
 const version = process.env.VERSION || require('../package.json').version
-const banner =
-`/*!
+const banner = `/*!
   * vue-router v${version}
   * (c) ${new Date().getFullYear()} Evan You
   * @license MIT
@@ -48,8 +47,9 @@ module.exports = [
   }
 ].map(genConfig)
 
-function genConfig (opts) {
+function genConfig(opts) {
   const config = {
+    sourceMap: true,
     input: {
       input: resolve('src/index.js'),
       plugins: [
@@ -70,9 +70,11 @@ function genConfig (opts) {
   }
 
   if (opts.env) {
-    config.input.plugins.unshift(replace({
-      'process.env.NODE_ENV': JSON.stringify(opts.env)
-    }))
+    config.input.plugins.unshift(
+      replace({
+        'process.env.NODE_ENV': JSON.stringify(opts.env)
+      })
+    )
   }
 
   if (opts.transpile !== false) {

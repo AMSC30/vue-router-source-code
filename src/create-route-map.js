@@ -2,31 +2,23 @@
 
 import Regexp from 'path-to-regexp'
 import { cleanPath } from './util/path'
-import { assert, warn } from './util/warn'
+import { warn } from './util/warn'
 
-export function createRouteMap (
-  routes: Array<RouteConfig>,
-  oldPathList?: Array<string>,
-  oldPathMap?: Dictionary<RouteRecord>,
-  oldNameMap?: Dictionary<RouteRecord>,
-  parentRoute?: RouteRecord
-): {
-  pathList: Array<string>,
-  pathMap: Dictionary<RouteRecord>,
-  nameMap: Dictionary<RouteRecord>
-} {
-  // the path list is used to control path matching priority
-  const pathList: Array<string> = oldPathList || []
-  // $flow-disable-line
-  const pathMap: Dictionary<RouteRecord> = oldPathMap || Object.create(null)
-  // $flow-disable-line
-  const nameMap: Dictionary<RouteRecord> = oldNameMap || Object.create(null)
+export function createRouteMap(
+  routes,
+  oldPathList,
+  oldPathMap,
+  oldNameMap,
+  parentRoute
+) {
+  const pathList = oldPathList || []
+  const pathMap = oldPathMap || Object.create(null)
+  const nameMap = oldNameMap || Object.create(null)
 
   routes.forEach(route => {
     addRouteRecord(pathList, pathMap, nameMap, route, parentRoute)
   })
 
-  // ensure wildcard routes are always at the end
   for (let i = 0, l = pathList.length; i < l; i++) {
     if (pathList[i] === '*') {
       pathList.push(pathList.splice(i, 1)[0])
@@ -38,12 +30,15 @@ export function createRouteMap (
   if (process.env.NODE_ENV === 'development') {
     // warn if routes do not include leading slashes
     const found = pathList
-    // check for missing leading slash
+      // check for missing leading slash
       .filter(path => path && path.charAt(0) !== '*' && path.charAt(0) !== '/')
 
     if (found.length > 0) {
       const pathNames = found.map(path => `- ${path}`).join('\n')
-      warn(false, `Non-nested routes must include a leading slash character. Fix the following routes: \n${pathNames}`)
+      warn(
+        false,
+        `Non-nested routes must include a leading slash character. Fix the following routes: \n${pathNames}`
+      )
     }
   }
 
@@ -54,7 +49,7 @@ export function createRouteMap (
   }
 }
 
-function addRouteRecord (
+function addRouteRecord(
   pathList: Array<string>,
   pathMap: Dictionary<RouteRecord>,
   nameMap: Dictionary<RouteRecord>,
@@ -63,36 +58,26 @@ function addRouteRecord (
   matchAs?: string
 ) {
   const { path, name } = route
-  if (process.env.NODE_ENV !== 'production') {
-    assert(path != null, `"path" is required in a route configuration.`)
-    assert(
-      typeof route.component !== 'string',
-      `route config "component" for path: ${String(
-        path || name
-      )} cannot be a ` + `string id. Use an actual component instead.`
-    )
-
-    warn(
-      // eslint-disable-next-line no-control-regex
-      !/[^\u0000-\u007F]+/.test(path),
-      `Route with path "${path}" contains unencoded characters, make sure ` +
-        `your path is correctly encoded before passing it to the router. Use ` +
-        `encodeURI to encode static segments of your path.`
-    )
-  }
 
   const pathToRegexpOptions: PathToRegexpOptions =
     route.pathToRegexpOptions || {}
+
+  // 1.拼接路径
   const normalizedPath = normalizePath(path, parent, pathToRegexpOptions.strict)
 
   if (typeof route.caseSensitive === 'boolean') {
     pathToRegexpOptions.sensitive = route.caseSensitive
   }
 
+  // 2.根据路由配置生成路由记录
   const record: RouteRecord = {
     path: normalizedPath,
     regex: compileRouteRegex(normalizedPath, pathToRegexpOptions),
+
+    // 对component结构的处理，components选项拥有高优先级
     components: route.components || { default: route.component },
+
+    // alias处理成一个数组
     alias: route.alias
       ? typeof route.alias === 'string'
         ? [route.alias]
@@ -110,32 +95,11 @@ function addRouteRecord (
       route.props == null
         ? {}
         : route.components
-          ? route.props
-          : { default: route.props }
+        ? route.props
+        : { default: route.props }
   }
 
   if (route.children) {
-    // Warn if route is named, does not redirect and has a default child route.
-    // If users navigate to this route by name, the default child will
-    // not be rendered (GH Issue #629)
-    if (process.env.NODE_ENV !== 'production') {
-      if (
-        route.name &&
-        !route.redirect &&
-        route.children.some(child => /^\/?$/.test(child.path))
-      ) {
-        warn(
-          false,
-          `Named Route '${route.name}' has a default child route. ` +
-            `When navigating to this named route (:to="{name: '${
-              route.name
-            }'"), ` +
-            `the default child route will not be rendered. Remove the name from ` +
-            `this route and use the name of the default child route for named ` +
-            `links instead.`
-        )
-      }
-    }
     route.children.forEach(child => {
       const childMatchAs = matchAs
         ? cleanPath(`${matchAs}/${child.path}`)
@@ -190,7 +154,7 @@ function addRouteRecord (
   }
 }
 
-function compileRouteRegex (
+function compileRouteRegex(
   path: string,
   pathToRegexpOptions: PathToRegexpOptions
 ): RouteRegExp {
@@ -208,13 +172,16 @@ function compileRouteRegex (
   return regex
 }
 
-function normalizePath (
+function normalizePath(
   path: string,
   parent?: RouteRecord,
   strict?: boolean
 ): string {
+  // 去掉末尾的slash
   if (!strict) path = path.replace(/\/$/, '')
-  if (path[0] === '/') return path
-  if (parent == null) return path
+
+  if (path[0] === '/' || parent == null) return path
+
+  // 不是以slash开头同时有父路由，才进行拼接
   return cleanPath(`${parent.path}/${path}`)
 }

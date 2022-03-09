@@ -35,19 +35,7 @@ export class History {
   listeners: Array<Function>
   cleanupListeners: Function
 
-  // implemented by sub-classes
-  +go: (n: number) => void
-  +push: (loc: RawLocation, onComplete?: Function, onAbort?: Function) => void
-  +replace: (
-    loc: RawLocation,
-    onComplete?: Function,
-    onAbort?: Function
-  ) => void
-  +ensureURL: (push?: boolean) => void
-  +getCurrentLocation: () => string
-  +setupListeners: Function
-
-  constructor (router: Router, base: ?string) {
+  constructor(router: Router, base: ?string) {
     this.router = router
     this.base = normalizeBase(base)
     // start with a route object that stands for "nowhere"
@@ -60,11 +48,11 @@ export class History {
     this.listeners = []
   }
 
-  listen (cb: Function) {
+  listen(cb: Function) {
     this.cb = cb
   }
 
-  onReady (cb: Function, errorCb: ?Function) {
+  onReady(cb: Function, errorCb: ?Function) {
     if (this.ready) {
       cb()
     } else {
@@ -75,17 +63,16 @@ export class History {
     }
   }
 
-  onError (errorCb: Function) {
+  onError(errorCb: Function) {
     this.errorCbs.push(errorCb)
   }
 
-  transitionTo (
+  transitionTo(
     location: RawLocation,
     onComplete?: Function,
     onAbort?: Function
   ) {
     let route
-    // catch redirect option https://github.com/vuejs/vue-router/issues/3201
     try {
       route = this.router.match(location, this.current)
     } catch (e) {
@@ -123,7 +110,10 @@ export class History {
           // because it's triggered by the redirection instead
           // https://github.com/vuejs/vue-router/issues/3225
           // https://github.com/vuejs/vue-router/issues/3331
-          if (!isNavigationFailure(err, NavigationFailureType.redirected) || prev !== START) {
+          if (
+            !isNavigationFailure(err, NavigationFailureType.redirected) ||
+            prev !== START
+          ) {
             this.ready = true
             this.readyErrorCbs.forEach(cb => {
               cb(err)
@@ -134,7 +124,7 @@ export class History {
     )
   }
 
-  confirmTransition (route: Route, onComplete: Function, onAbort?: Function) {
+  confirmTransition(route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     this.pending = route
     const abort = err => {
@@ -243,31 +233,29 @@ export class History {
     })
   }
 
-  updateRoute (route: Route) {
+  updateRoute(route: Route) {
     this.current = route
     this.cb && this.cb(route)
   }
 
-  setupListeners () {
+  setupListeners() {
     // Default implementation is empty
   }
 
-  teardown () {
-    // clean up event listeners
-    // https://github.com/vuejs/vue-router/issues/2341
+  teardown() {
     this.listeners.forEach(cleanupListener => {
       cleanupListener()
     })
     this.listeners = []
 
-    // reset current history route
-    // https://github.com/vuejs/vue-router/issues/3294
     this.current = START
     this.pending = null
   }
 }
 
-function normalizeBase (base: ?string): string {
+function normalizeBase(base: ?string): string {
+  // 如果没有base，根据base标签的href属性，如果没有base标签默认为'/'
+  // 优先级: options.base -> base tag -> default
   if (!base) {
     if (inBrowser) {
       // respect <base> tag
@@ -279,15 +267,16 @@ function normalizeBase (base: ?string): string {
       base = '/'
     }
   }
-  // make sure there's the starting slash
+
+  // 主动给base加上/ ，所以配置的时候，可写可不写
   if (base.charAt(0) !== '/') {
     base = '/' + base
   }
-  // remove trailing slash
+  // 删除末尾的slash，所有可写可不写
   return base.replace(/\/$/, '')
 }
 
-function resolveQueue (
+function resolveQueue(
   current: Array<RouteRecord>,
   next: Array<RouteRecord>
 ): {
@@ -309,7 +298,7 @@ function resolveQueue (
   }
 }
 
-function extractGuards (
+function extractGuards(
   records: Array<RouteRecord>,
   name: string,
   bind: Function,
@@ -326,7 +315,7 @@ function extractGuards (
   return flatten(reverse ? guards.reverse() : guards)
 }
 
-function extractGuard (
+function extractGuard(
   def: Object | Function,
   key: string
 ): NavigationGuard | Array<NavigationGuard> {
@@ -337,25 +326,23 @@ function extractGuard (
   return def.options[key]
 }
 
-function extractLeaveGuards (deactivated: Array<RouteRecord>): Array<?Function> {
+function extractLeaveGuards(deactivated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(deactivated, 'beforeRouteLeave', bindGuard, true)
 }
 
-function extractUpdateHooks (updated: Array<RouteRecord>): Array<?Function> {
+function extractUpdateHooks(updated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(updated, 'beforeRouteUpdate', bindGuard)
 }
 
-function bindGuard (guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
+function bindGuard(guard: NavigationGuard, instance: ?_Vue): ?NavigationGuard {
   if (instance) {
-    return function boundRouteGuard () {
+    return function boundRouteGuard() {
       return guard.apply(instance, arguments)
     }
   }
 }
 
-function extractEnterGuards (
-  activated: Array<RouteRecord>
-): Array<?Function> {
+function extractEnterGuards(activated: Array<RouteRecord>): Array<?Function> {
   return extractGuards(
     activated,
     'beforeRouteEnter',
@@ -365,12 +352,12 @@ function extractEnterGuards (
   )
 }
 
-function bindEnterGuard (
+function bindEnterGuard(
   guard: NavigationGuard,
   match: RouteRecord,
   key: string
 ): NavigationGuard {
-  return function routeEnterGuard (to, from, next) {
+  return function routeEnterGuard(to, from, next) {
     return guard(to, from, cb => {
       if (typeof cb === 'function') {
         if (!match.enteredCbs[key]) {
