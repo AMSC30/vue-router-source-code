@@ -7,14 +7,13 @@ import { fillParams } from './params'
 import { warn } from './warn'
 import { extend } from './misc'
 
-export function normalizeLocation (
+export function normalizeLocation(
   raw: RawLocation,
   current: ?Route,
   append: ?boolean,
   router: ?VueRouter
-): Location {
+) {
   let next: Location = typeof raw === 'string' ? { path: raw } : raw
-  // named target
   if (next._normalized) {
     return next
   } else if (next.name) {
@@ -25,8 +24,9 @@ export function normalizeLocation (
     }
     return next
   }
-
-  // relative params
+  /**
+   * 通过{name:"name",params:{a:1}}的方式通过路由跳转
+   */
   if (!next.path && next.params && current) {
     next = extend({}, next)
     next._normalized = true

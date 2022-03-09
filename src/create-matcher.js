@@ -28,22 +28,21 @@ export function createMatcher(
   router: VueRouter
 ): Matcher {
   const { pathList, pathMap, nameMap } = createRouteMap(routes)
-  console.log(pathList, pathMap, nameMap)
 
+  // 添加到顶层
   function addRoutes(routes) {
     createRouteMap(routes, pathList, pathMap, nameMap)
   }
 
+  // 添加到任意一层，也就是添加子路由的意思，注意这里只接受路由记录的name方式
   function addRoute(parentOrRoute, route) {
     const parent =
       typeof parentOrRoute !== 'object' ? nameMap[parentOrRoute] : undefined
-    // $flow-disable-line
     createRouteMap([route || parentOrRoute], pathList, pathMap, nameMap, parent)
 
-    // add aliases of parent
+    // 如果父路由记录有别名，使用别名路径再生成子路由记录
     if (parent && parent.alias.length) {
       createRouteMap(
-        // $flow-disable-line route is defined if parent is
         parent.alias.map(alias => ({ path: alias, children: [route] })),
         pathList,
         pathMap,
@@ -61,7 +60,7 @@ export function createMatcher(
     raw: RawLocation,
     currentRoute?: Route,
     redirectedFrom?: Location
-  ): Route {
+  ) {
     const location = normalizeLocation(raw, currentRoute, false, router)
     const { name } = location
 

@@ -48,6 +48,10 @@ export function createRouteMap(
     nameMap
   }
 }
+/**
+ * 这个函数的本质是将传入的路由配置与父路由记录结合生成新的路径，路由配置生成新的路由记录
+ * 并保存在路由表中，针对的是单个路由配置对象
+ * */
 
 function addRouteRecord(
   pathList: Array<string>,
@@ -99,6 +103,7 @@ function addRouteRecord(
         : { default: route.props }
   }
 
+  // 3.递归子路由配置生成新的路由记录，所以子path在pathList前面
   if (route.children) {
     route.children.forEach(child => {
       const childMatchAs = matchAs
@@ -108,24 +113,20 @@ function addRouteRecord(
     })
   }
 
+  // 4.将当前路由记录添加到映射表中
   if (!pathMap[record.path]) {
     pathList.push(record.path)
     pathMap[record.path] = record
   }
+  if (name && !nameMap[name]) {
+    nameMap[name] = record
+  }
 
+  // 5.将别名作为新的路径，作为一个新的路由配置，创建别名的路由记录添加到路由表中
   if (route.alias !== undefined) {
     const aliases = Array.isArray(route.alias) ? route.alias : [route.alias]
     for (let i = 0; i < aliases.length; ++i) {
       const alias = aliases[i]
-      if (process.env.NODE_ENV !== 'production' && alias === path) {
-        warn(
-          false,
-          `Found an alias with the same value as the path: "${path}". You have to remove that alias. It will be ignored in development.`
-        )
-        // skip in dev to make it work
-        continue
-      }
-
       const aliasRoute = {
         path: alias,
         children: route.children
@@ -137,18 +138,6 @@ function addRouteRecord(
         aliasRoute,
         parent,
         record.path || '/' // matchAs
-      )
-    }
-  }
-
-  if (name) {
-    if (!nameMap[name]) {
-      nameMap[name] = record
-    } else if (process.env.NODE_ENV !== 'production' && !matchAs) {
-      warn(
-        false,
-        `Duplicate named routes definition: ` +
-          `{ name: "${name}", path: "${record.path}" }`
       )
     }
   }
@@ -172,6 +161,9 @@ function compileRouteRegex(
   return regex
 }
 
+/**
+ * 与父路径拼接，可能以“/”开头也可能不是
+ * */
 function normalizePath(
   path: string,
   parent?: RouteRecord,

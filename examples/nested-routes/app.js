@@ -50,6 +50,7 @@ const router = new VueRouter({
     { path: '/', redirect: '/parent' },
     {
       path: '/parent',
+      alias: ['/app', '/ass'],
       component: Parent,
       children: [
         { path: '', component: Default },
