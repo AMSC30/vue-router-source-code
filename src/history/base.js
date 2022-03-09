@@ -23,25 +23,14 @@ import {
 import { handleScroll } from '../util/scroll'
 
 export class History {
-  router: Router
-  base: string
-  current: Route
-  pending: ?Route
-  cb: (r: Route) => void
-  ready: boolean
-  readyCbs: Array<Function>
-  readyErrorCbs: Array<Function>
-  errorCbs: Array<Function>
-  listeners: Array<Function>
-  cleanupListeners: Function
-
   constructor(router: Router, base: ?string) {
     this.router = router
     this.base = normalizeBase(base)
-    // start with a route object that stands for "nowhere"
     this.current = START
+
     this.pending = null
     this.ready = false
+
     this.readyCbs = []
     this.readyErrorCbs = []
     this.errorCbs = []

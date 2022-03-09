@@ -14,7 +14,7 @@ const encode = str =>
     .replace(encodeReserveRE, encodeReserveReplacer)
     .replace(commaRE, ',')
 
-export function decode (str: string) {
+export function decode(str: string) {
   try {
     return decodeURIComponent(str)
   } catch (err) {
@@ -25,7 +25,7 @@ export function decode (str: string) {
   return str
 }
 
-export function resolveQuery (
+export function resolveQuery(
   query: ?string,
   extraQuery: Dictionary<string> = {},
   _parseQuery: ?Function
@@ -47,9 +47,10 @@ export function resolveQuery (
   return parsedQuery
 }
 
-const castQueryParamValue = value => (value == null || typeof value === 'object' ? value : String(value))
+const castQueryParamValue = value =>
+  value == null || typeof value === 'object' ? value : String(value)
 
-function parseQuery (query: string): Dictionary<string> {
+function parseQuery(query: string): Dictionary<string> {
   const res = {}
 
   query = query.trim().replace(/^(\?|#|&)/, '')
@@ -75,39 +76,40 @@ function parseQuery (query: string): Dictionary<string> {
   return res
 }
 
-export function stringifyQuery (obj: Dictionary<string>): string {
+// 将对象转成query字符串
+export function stringifyQuery(obj: Dictionary<string>): string {
   const res = obj
     ? Object.keys(obj)
-      .map(key => {
-        const val = obj[key]
+        .map(key => {
+          const val = obj[key]
 
-        if (val === undefined) {
-          return ''
-        }
+          if (val === undefined) {
+            return ''
+          }
 
-        if (val === null) {
-          return encode(key)
-        }
+          if (val === null) {
+            return encode(key)
+          }
 
-        if (Array.isArray(val)) {
-          const result = []
-          val.forEach(val2 => {
-            if (val2 === undefined) {
-              return
-            }
-            if (val2 === null) {
-              result.push(encode(key))
-            } else {
-              result.push(encode(key) + '=' + encode(val2))
-            }
-          })
-          return result.join('&')
-        }
+          if (Array.isArray(val)) {
+            const result = []
+            val.forEach(val2 => {
+              if (val2 === undefined) {
+                return
+              }
+              if (val2 === null) {
+                result.push(encode(key))
+              } else {
+                result.push(encode(key) + '=' + encode(val2))
+              }
+            })
+            return result.join('&')
+          }
 
-        return encode(key) + '=' + encode(val)
-      })
-      .filter(x => x.length > 0)
-      .join('&')
+          return encode(key) + '=' + encode(val)
+        })
+        .filter(x => x.length > 0)
+        .join('&')
     : null
   return res ? `?${res}` : ''
 }
