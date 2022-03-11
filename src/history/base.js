@@ -72,14 +72,16 @@ export class History {
     this.confirmTransition(
       route,
       () => {
+        // 改变_route
         this.updateRoute(route)
         onComplete && onComplete(route)
+        // 改变url,导航成功后才改变url
         this.ensureURL()
+        // 执行afterEach注册的钩子
         this.router.afterHooks.forEach(hook => {
           hook && hook(route, prev)
         })
 
-        // fire ready cbs once
         if (!this.ready) {
           this.ready = true
           this.readyCbs.forEach(cb => {
@@ -125,16 +127,26 @@ export class History {
       onAbort && onAbort(err)
     }
 
+    // 均为record数组
     const { updated, deactivated, activated } = resolveQueue(
       this.current.matched,
       route.matched
     )
 
     const queue: Array<?NavigationGuard> = [].concat(
+      // beforeRouteLeave回调,从子到父
       extractLeaveGuards(deactivated),
+
+      // beforeEach回调,按注册顺序调用
       this.router.beforeHooks,
+
+      // beforeRouteUpdate回调,从父到子
       extractUpdateHooks(updated),
+
+      // beforeEnter回调,注册在路由配置中
       activated.map(m => m.beforeEnter),
+
+      // 异步组件
       resolveAsyncComponents(activated)
     )
     const iterator = (hook: NavigationGuard, next) => {
@@ -172,7 +184,9 @@ export class History {
     }
 
     runQueue(queue, iterator, () => {
+      // beforeRouteEnter生命周期
       const enterGuards = extractEnterGuards(activated)
+      // beforeResolve钩子
       const queue = enterGuards.concat(this.router.resolveHooks)
       runQueue(queue, iterator, () => {
         if (this.pending !== route) {
@@ -232,14 +246,7 @@ function normalizeBase(base: ?string): string {
   return base.replace(/\/$/, '')
 }
 
-function resolveQueue(
-  current: Array<RouteRecord>,
-  next: Array<RouteRecord>
-): {
-  updated: Array<RouteRecord>,
-  activated: Array<RouteRecord>,
-  deactivated: Array<RouteRecord>
-} {
+function resolveQueue(current: Array<RouteRecord>, next: Array<RouteRecord>) {
   let i
   const max = Math.max(current.length, next.length)
   for (i = 0; i < max; i++) {
@@ -261,6 +268,7 @@ function extractGuards(
   reverse?: boolean
 ): Array<?Function> {
   const guards = flatMapComponents(records, (def, instance, match, key) => {
+    // 获取到路由的导航守卫,可能是个函数数组
     const guard = extractGuard(def, name)
     if (guard) {
       return Array.isArray(guard)
@@ -276,17 +284,18 @@ function extractGuard(
   key: string
 ): NavigationGuard | Array<NavigationGuard> {
   if (typeof def !== 'function') {
-    // extend now so that global mixins are applied.
     def = _Vue.extend(def)
   }
   return def.options[key]
 }
 
 function extractLeaveGuards(deactivated: Array<RouteRecord>): Array<?Function> {
+  // 子组件的beforeRouteLeave先执行
   return extractGuards(deactivated, 'beforeRouteLeave', bindGuard, true)
 }
 
 function extractUpdateHooks(updated: Array<RouteRecord>): Array<?Function> {
+  // update从父到子
   return extractGuards(updated, 'beforeRouteUpdate', bindGuard)
 }
 
