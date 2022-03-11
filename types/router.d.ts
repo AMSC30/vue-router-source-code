@@ -43,7 +43,7 @@ export declare class VueRouter {
   go(n: number): void
   back(): void
   forward(): void
-  match (raw: RawLocation, current?: Route, redirectedFrom?: Location): Route
+  match(raw: RawLocation, current?: Route, redirectedFrom?: Location): Route
   getMatchedComponents(to?: RawLocation | Route): Component[]
   onReady(cb: Function, errorCb?: ErrorHandler): void
   onError(cb: ErrorHandler): void
@@ -94,7 +94,10 @@ export interface NavigationFailure extends Error {
 }
 
 type Position = { x: number; y: number }
-type PositionResult = Position | { selector: string; offset?: Position, behavior?: ScrollBehavior } | void
+type PositionResult =
+  | Position
+  | { selector: string; offset?: Position; behavior?: ScrollBehavior }
+  | void
 
 export interface RouterOptions {
   routes?: RouteConfig[]
@@ -184,7 +187,6 @@ export interface RouteRecordPublic {
     | RoutePropsFunction
     | Dictionary<boolean | Object | RoutePropsFunction>
 }
-
 
 export interface Location {
   name?: string

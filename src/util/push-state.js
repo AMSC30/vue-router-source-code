@@ -7,7 +7,7 @@ import { extend } from './misc'
 
 export const supportsPushState =
   inBrowser &&
-  (function () {
+  (function() {
     const ua = window.navigator.userAgent
 
     if (
@@ -22,14 +22,12 @@ export const supportsPushState =
     return window.history && typeof window.history.pushState === 'function'
   })()
 
-export function pushState (url?: string, replace?: boolean) {
+export function pushState(url?: string, replace?: boolean) {
   saveScrollPosition()
-  // try...catch the pushState call to get around Safari
-  // DOM Exception 18 where it limits to 100 pushState calls
   const history = window.history
   try {
+    // 优先使用history
     if (replace) {
-      // preserve existing history state as it could be overriden by the user
       const stateCopy = extend({}, history.state)
       stateCopy.key = getStateKey()
       history.replaceState(stateCopy, '', url)
@@ -37,10 +35,11 @@ export function pushState (url?: string, replace?: boolean) {
       history.pushState({ key: setStateKey(genStateKey()) }, '', url)
     }
   } catch (e) {
+    // 降级使用location
     window.location[replace ? 'replace' : 'assign'](url)
   }
 }
 
-export function replaceState (url?: string) {
+export function replaceState(url?: string) {
   pushState(url, true)
 }

@@ -96,6 +96,8 @@ export default class VueRouter {
       const index = this.apps.indexOf(app)
       if (index > -1) this.apps.splice(index, 1)
       if (this.app === app) this.app = this.apps[0] || null
+
+      // 实例销毁完了
       if (!this.app) this.history.teardown()
     })
 
@@ -108,7 +110,7 @@ export default class VueRouter {
     const history = this.history
 
     if (history instanceof HTML5History || history instanceof HashHistory) {
-      const handleInitialScroll = (routeOrError) => {
+      const handleInitialScroll = routeOrError => {
         const from = history.current
         const expectScroll = this.options.scrollBehavior
         const supportsScroll = supportsPushState && expectScroll
@@ -117,7 +119,7 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
-      const setupListeners = (routeOrError) => {
+      const setupListeners = routeOrError => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
@@ -128,8 +130,8 @@ export default class VueRouter {
       )
     }
 
-    history.listen((route) => {
-      this.apps.forEach((app) => {
+    history.listen(route => {
+      this.apps.forEach(app => {
         app._route = route
       })
     })
@@ -156,7 +158,6 @@ export default class VueRouter {
   }
 
   push(location: RawLocation, onComplete?: Function, onAbort?: Function) {
-    // $flow-disable-line
     if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
       return new Promise((resolve, reject) => {
         this.history.push(location, resolve, reject)
@@ -167,7 +168,6 @@ export default class VueRouter {
   }
 
   replace(location: RawLocation, onComplete?: Function, onAbort?: Function) {
-    // $flow-disable-line
     if (!onComplete && !onAbort && typeof Promise !== 'undefined') {
       return new Promise((resolve, reject) => {
         this.history.replace(location, resolve, reject)
@@ -200,8 +200,8 @@ export default class VueRouter {
     }
     return [].concat.apply(
       [],
-      route.matched.map((m) => {
-        return Object.keys(m.components).map((key) => {
+      route.matched.map(m => {
+        return Object.keys(m.components).map(key => {
           return m.components[key]
         })
       })
@@ -216,9 +216,8 @@ export default class VueRouter {
     location: Location,
     route: Route,
     href: string,
-    // for backwards compat
     normalizedTo: Location,
-    resolved: Route,
+    resolved: Route
   } {
     current = current || this.history.current
     const location = normalizeLocation(to, current, append, this)
@@ -230,9 +229,8 @@ export default class VueRouter {
       location,
       route,
       href,
-      // for backwards compat
       normalizedTo: location,
-      resolved: route,
+      resolved: route
     }
   }
 

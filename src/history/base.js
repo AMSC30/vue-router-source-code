@@ -5,22 +5,20 @@ import type Router from '../index'
 import { inBrowser } from '../util/dom'
 import { runQueue } from '../util/async'
 import { warn } from '../util/warn'
-import { START, isSameRoute, handleRouteEntered } from '../util/route'
+import { START, handleRouteEntered } from '../util/route'
 import {
   flatten,
   flatMapComponents,
-  resolveAsyncComponents,
+  resolveAsyncComponents
 } from '../util/resolve-components'
 import {
-  createNavigationDuplicatedError,
   createNavigationCancelledError,
   createNavigationRedirectedError,
   createNavigationAbortedError,
   isError,
   isNavigationFailure,
-  NavigationFailureType,
+  NavigationFailureType
 } from '../util/errors'
-import { handleScroll } from '../util/scroll'
 
 export class History {
   constructor(router: Router, base: ?string) {
@@ -65,10 +63,9 @@ export class History {
     try {
       route = this.router.match(location, this.current)
     } catch (e) {
-      this.errorCbs.forEach((cb) => {
+      this.errorCbs.forEach(cb => {
         cb(e)
       })
-      // Exception should still be thrown
       throw e
     }
     const prev = this.current
@@ -78,19 +75,19 @@ export class History {
         this.updateRoute(route)
         onComplete && onComplete(route)
         this.ensureURL()
-        this.router.afterHooks.forEach((hook) => {
+        this.router.afterHooks.forEach(hook => {
           hook && hook(route, prev)
         })
 
         // fire ready cbs once
         if (!this.ready) {
           this.ready = true
-          this.readyCbs.forEach((cb) => {
+          this.readyCbs.forEach(cb => {
             cb(route)
           })
         }
       },
-      (err) => {
+      err => {
         if (onAbort) {
           onAbort(err)
         }
@@ -100,7 +97,7 @@ export class History {
             prev !== START
           ) {
             this.ready = true
-            this.readyErrorCbs.forEach((cb) => {
+            this.readyErrorCbs.forEach(cb => {
               cb(err)
             })
           }
@@ -112,10 +109,10 @@ export class History {
   confirmTransition(route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     this.pending = route
-    const abort = (err) => {
+    const abort = err => {
       if (!isNavigationFailure(err) && isError(err)) {
         if (this.errorCbs.length) {
-          this.errorCbs.forEach((cb) => {
+          this.errorCbs.forEach(cb => {
             cb(err)
           })
         } else {
@@ -127,19 +124,6 @@ export class History {
       }
       onAbort && onAbort(err)
     }
-    const lastRouteIndex = route.matched.length - 1
-    const lastCurrentIndex = current.matched.length - 1
-    if (
-      isSameRoute(route, current) &&
-      lastRouteIndex === lastCurrentIndex &&
-      route.matched[lastRouteIndex] === current.matched[lastCurrentIndex]
-    ) {
-      this.ensureURL()
-      if (route.hash) {
-        handleScroll(this.router, current, route, false)
-      }
-      return abort(createNavigationDuplicatedError(current, route))
-    }
 
     const { updated, deactivated, activated } = resolveQueue(
       this.current.matched,
@@ -147,18 +131,12 @@ export class History {
     )
 
     const queue: Array<?NavigationGuard> = [].concat(
-      // in-component leave guards
       extractLeaveGuards(deactivated),
-      // global before hooks
       this.router.beforeHooks,
-      // in-component update hooks
       extractUpdateHooks(updated),
-      // in-config enter guards
-      activated.map((m) => m.beforeEnter),
-      // async components
+      activated.map(m => m.beforeEnter),
       resolveAsyncComponents(activated)
     )
-
     const iterator = (hook: NavigationGuard, next) => {
       if (this.pending !== route) {
         return abort(createNavigationCancelledError(current, route))
@@ -166,7 +144,6 @@ export class History {
       try {
         hook(route, current, (to: any) => {
           if (to === false) {
-            // next(false) -> abort navigation, ensure current URL
             this.ensureURL(true)
             abort(createNavigationAbortedError(current, route))
           } else if (isError(to)) {
@@ -195,8 +172,6 @@ export class History {
     }
 
     runQueue(queue, iterator, () => {
-      // wait until async components are resolved before
-      // extracting in-component enter guards
       const enterGuards = extractEnterGuards(activated)
       const queue = enterGuards.concat(this.router.resolveHooks)
       runQueue(queue, iterator, () => {
@@ -224,7 +199,7 @@ export class History {
   }
 
   teardown() {
-    this.listeners.forEach((cleanupListener) => {
+    this.listeners.forEach(cleanupListener => {
       cleanupListener()
     })
     this.listeners = []
@@ -263,7 +238,7 @@ function resolveQueue(
 ): {
   updated: Array<RouteRecord>,
   activated: Array<RouteRecord>,
-  deactivated: Array<RouteRecord>,
+  deactivated: Array<RouteRecord>
 } {
   let i
   const max = Math.max(current.length, next.length)
@@ -275,7 +250,7 @@ function resolveQueue(
   return {
     updated: next.slice(0, i),
     activated: next.slice(i),
-    deactivated: current.slice(i),
+    deactivated: current.slice(i)
   }
 }
 
@@ -289,7 +264,7 @@ function extractGuards(
     const guard = extractGuard(def, name)
     if (guard) {
       return Array.isArray(guard)
-        ? guard.map((guard) => bind(guard, instance, match, key))
+        ? guard.map(guard => bind(guard, instance, match, key))
         : bind(guard, instance, match, key)
     }
   })
@@ -339,7 +314,7 @@ function bindEnterGuard(
   key: string
 ): NavigationGuard {
   return function routeEnterGuard(to, from, next) {
-    return guard(to, from, (cb) => {
+    return guard(to, from, cb => {
       if (typeof cb === 'function') {
         if (!match.enteredCbs[key]) {
           match.enteredCbs[key] = []

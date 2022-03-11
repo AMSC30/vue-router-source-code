@@ -19,8 +19,7 @@ export class HashHistory extends History {
     ensureSlash()
   }
 
-  // this is delayed until the app mounts
-  // to avoid the hashchange listener being fired too early
+  // 监听路由的变化，优先监听popstate，路由变化后不需要确认url，因为触发是url变化触发，如果是路由主动触发，在完成导航后，还需要根据当前路由route确认当前url，并将取消监听的函数作为回调放入listeners中
   setupListeners() {
     if (this.listeners.length > 0) {
       return

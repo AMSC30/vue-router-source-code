@@ -42,7 +42,7 @@ export default {
       default: 'click'
     }
   },
-  render (h: Function) {
+  render(h: Function) {
     const router = this.$router
     const current = this.$route
     const { location, route, href } = router.resolve(
@@ -72,12 +72,19 @@ export default {
       ? createRoute(null, normalizeLocation(route.redirectedFrom), null, router)
       : route
 
-    classes[exactActiveClass] = isSameRoute(current, compareTarget, this.exactPath)
-    classes[activeClass] = this.exact || this.exactPath
-      ? classes[exactActiveClass]
-      : isIncludedRoute(current, compareTarget)
+    classes[exactActiveClass] = isSameRoute(
+      current,
+      compareTarget,
+      this.exactPath
+    )
+    classes[activeClass] =
+      this.exact || this.exactPath
+        ? classes[exactActiveClass]
+        : isIncludedRoute(current, compareTarget)
 
-    const ariaCurrentValue = classes[exactActiveClass] ? this.ariaCurrentValue : null
+    const ariaCurrentValue = classes[exactActiveClass]
+      ? this.ariaCurrentValue
+      : null
 
     const handler = e => {
       if (guardEvent(e)) {
@@ -113,7 +120,11 @@ export default {
 
     if (scopedSlot) {
       if (process.env.NODE_ENV !== 'production' && !this.custom) {
-        !warnedCustomSlot && warn(false, 'In Vue Router 4, the v-slot API will by default wrap its content with an <a> element. Use the custom prop to remove this warning:\n<router-link v-slot="{ navigate, href }" custom></router-link>\n')
+        !warnedCustomSlot &&
+          warn(
+            false,
+            'In Vue Router 4, the v-slot API will by default wrap its content with an <a> element. Use the custom prop to remove this warning:\n<router-link v-slot="{ navigate, href }" custom></router-link>\n'
+          )
         warnedCustomSlot = true
       }
       if (scopedSlot.length === 1) {
@@ -122,9 +133,7 @@ export default {
         if (process.env.NODE_ENV !== 'production') {
           warn(
             false,
-            `<router-link> with to="${
-              this.to
-            }" is trying to use a scoped slot but it didn't provide exactly one child. Wrapping the content with a span element.`
+            `<router-link> with to="${this.to}" is trying to use a scoped slot but it didn't provide exactly one child. Wrapping the content with a span element.`
           )
         }
         return scopedSlot.length === 0 ? h() : h('span', {}, scopedSlot)
@@ -148,6 +157,7 @@ export default {
       }
     }
 
+    // 没有插槽内容的情况
     if (this.tag === 'a') {
       data.on = on
       data.attrs = { href, 'aria-current': ariaCurrentValue }
@@ -189,7 +199,7 @@ export default {
   }
 }
 
-function guardEvent (e) {
+function guardEvent(e) {
   // don't redirect with control keys
   if (e.metaKey || e.altKey || e.ctrlKey || e.shiftKey) return
   // don't redirect when preventDefault called
@@ -208,7 +218,7 @@ function guardEvent (e) {
   return true
 }
 
-function findAnchor (children) {
+function findAnchor(children) {
   if (children) {
     let child
     for (let i = 0; i < children.length; i++) {

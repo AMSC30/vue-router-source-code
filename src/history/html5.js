@@ -6,12 +6,12 @@ import { cleanPath } from '../util/path'
 import { START } from '../util/route'
 import { setupScroll, handleScroll } from '../util/scroll'
 import { pushState, replaceState, supportsPushState } from '../util/push-state'
-
 export class HTML5History extends History {
   constructor(router: Router, base: ?string) {
     super(router, base)
 
     // 根据base，从pathname中获取path，并拼接query和hash，并没有更改
+    // 跳转后，刷新，每次的值都是不一样
     this._startLocation = getLocation(this.base)
   }
 
@@ -80,6 +80,7 @@ export class HTML5History extends History {
     )
   }
 
+  // 将地址栏的地址替换为当前路由的路径
   ensureURL(push?: boolean) {
     if (getLocation(this.base) !== this.current.fullPath) {
       const current = cleanPath(this.base + this.current.fullPath)
@@ -92,13 +93,11 @@ export class HTML5History extends History {
   }
 }
 
+// 至少会返回一个根路径
 export function getLocation(base): string {
   let path = window.location.pathname
   const pathLowerCase = path.toLowerCase()
   const baseLowerCase = base.toLowerCase()
-  // base="/a" shouldn't turn path="/app" into "/a/pp"
-  // https://github.com/vuejs/vue-router/issues/3555
-  // so we ensure the trailing slash in the base
   if (
     base &&
     (pathLowerCase === baseLowerCase ||

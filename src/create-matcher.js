@@ -62,14 +62,15 @@ export function createMatcher(
     redirectedFrom?: Location
   ) {
     const location = normalizeLocation(raw, currentRoute, false, router)
+
     const { name } = location
 
     if (name) {
       const record = nameMap[name]
-      if (process.env.NODE_ENV !== 'production') {
-        warn(record, `Route with name '${name}' does not exist`)
-      }
+
       if (!record) return _createRoute(null, location)
+
+      // 从路由配置的路径中获取路由参数名称
       const paramNames = record.regex.keys
         .filter(key => !key.optional)
         .map(key => key.name)
@@ -78,6 +79,7 @@ export function createMatcher(
         location.params = {}
       }
 
+      // 获取当前路由的路由参数，并和导航路由传的params进行合并
       if (currentRoute && typeof currentRoute.params === 'object') {
         for (const key in currentRoute.params) {
           if (!(key in location.params) && paramNames.indexOf(key) > -1) {
@@ -86,6 +88,7 @@ export function createMatcher(
         }
       }
 
+      // 将路由记录的路径参数根据传入的params进行填充成实际path
       location.path = fillParams(
         record.path,
         location.params,

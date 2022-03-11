@@ -42,13 +42,7 @@ export function resolvePath(
   return stack.join('/')
 }
 
-export function parsePath(
-  path: string
-): {
-  path: string,
-  query: string,
-  hash: string
-} {
+export function parsePath(path: string) {
   let hash = ''
   let query = ''
 
