@@ -9,7 +9,7 @@ import { START, handleRouteEntered } from '../util/route'
 import {
   flatten,
   flatMapComponents,
-  resolveAsyncComponents
+  resolveAsyncComponents,
 } from '../util/resolve-components'
 import {
   createNavigationCancelledError,
@@ -17,7 +17,7 @@ import {
   createNavigationAbortedError,
   isError,
   isNavigationFailure,
-  NavigationFailureType
+  NavigationFailureType,
 } from '../util/errors'
 
 export class History {
@@ -61,9 +61,10 @@ export class History {
   ) {
     let route
     try {
+      // 根据url匹配到路由配置
       route = this.router.match(location, this.current)
     } catch (e) {
-      this.errorCbs.forEach(cb => {
+      this.errorCbs.forEach((cb) => {
         cb(e)
       })
       throw e
@@ -78,18 +79,18 @@ export class History {
         // 改变url,导航成功后才改变url
         this.ensureURL()
         // 执行afterEach注册的钩子
-        this.router.afterHooks.forEach(hook => {
+        this.router.afterHooks.forEach((hook) => {
           hook && hook(route, prev)
         })
 
         if (!this.ready) {
           this.ready = true
-          this.readyCbs.forEach(cb => {
+          this.readyCbs.forEach((cb) => {
             cb(route)
           })
         }
       },
-      err => {
+      (err) => {
         if (onAbort) {
           onAbort(err)
         }
@@ -99,7 +100,7 @@ export class History {
             prev !== START
           ) {
             this.ready = true
-            this.readyErrorCbs.forEach(cb => {
+            this.readyErrorCbs.forEach((cb) => {
               cb(err)
             })
           }
@@ -111,10 +112,10 @@ export class History {
   confirmTransition(route: Route, onComplete: Function, onAbort?: Function) {
     const current = this.current
     this.pending = route
-    const abort = err => {
+    const abort = (err) => {
       if (!isNavigationFailure(err) && isError(err)) {
         if (this.errorCbs.length) {
-          this.errorCbs.forEach(cb => {
+          this.errorCbs.forEach((cb) => {
             cb(err)
           })
         } else {
@@ -144,7 +145,7 @@ export class History {
       extractUpdateHooks(updated),
 
       // beforeEnter回调,注册在路由配置中
-      activated.map(m => m.beforeEnter),
+      activated.map((m) => m.beforeEnter),
 
       // 异步组件
       resolveAsyncComponents(activated)
@@ -213,7 +214,7 @@ export class History {
   }
 
   teardown() {
-    this.listeners.forEach(cleanupListener => {
+    this.listeners.forEach((cleanupListener) => {
       cleanupListener()
     })
     this.listeners = []
@@ -257,7 +258,7 @@ function resolveQueue(current: Array<RouteRecord>, next: Array<RouteRecord>) {
   return {
     updated: next.slice(0, i),
     activated: next.slice(i),
-    deactivated: current.slice(i)
+    deactivated: current.slice(i),
   }
 }
 
@@ -272,7 +273,7 @@ function extractGuards(
     const guard = extractGuard(def, name)
     if (guard) {
       return Array.isArray(guard)
-        ? guard.map(guard => bind(guard, instance, match, key))
+        ? guard.map((guard) => bind(guard, instance, match, key))
         : bind(guard, instance, match, key)
     }
   })
@@ -323,7 +324,7 @@ function bindEnterGuard(
   key: string
 ): NavigationGuard {
   return function routeEnterGuard(to, from, next) {
-    return guard(to, from, cb => {
+    return guard(to, from, (cb) => {
       if (typeof cb === 'function') {
         if (!match.enteredCbs[key]) {
           match.enteredCbs[key] = []

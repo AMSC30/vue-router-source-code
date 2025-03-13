@@ -110,7 +110,7 @@ export default class VueRouter {
     const history = this.history
 
     if (history instanceof HTML5History || history instanceof HashHistory) {
-      const handleInitialScroll = routeOrError => {
+      const handleInitialScroll = (routeOrError) => {
         const from = history.current
         const expectScroll = this.options.scrollBehavior
         const supportsScroll = supportsPushState && expectScroll
@@ -119,19 +119,19 @@ export default class VueRouter {
           handleScroll(this, routeOrError, from, false)
         }
       }
-      const setupListeners = routeOrError => {
+      const setupListeners = (routeOrError) => {
         history.setupListeners()
         handleInitialScroll(routeOrError)
       }
       history.transitionTo(
-        history.getCurrentLocation(),
+        history.getCurrentLocation(), // 浏览器url
         setupListeners,
         setupListeners
       )
     }
-
-    history.listen(route => {
-      this.apps.forEach(app => {
+    // 注册history的cb回到
+    history.listen((route) => {
+      this.apps.forEach((app) => {
         app._route = route
       })
     })
@@ -200,8 +200,8 @@ export default class VueRouter {
     }
     return [].concat.apply(
       [],
-      route.matched.map(m => {
-        return Object.keys(m.components).map(key => {
+      route.matched.map((m) => {
+        return Object.keys(m.components).map((key) => {
           return m.components[key]
         })
       })
@@ -217,7 +217,7 @@ export default class VueRouter {
     route: Route,
     href: string,
     normalizedTo: Location,
-    resolved: Route
+    resolved: Route,
   } {
     current = current || this.history.current
     const location = normalizeLocation(to, current, append, this)
@@ -230,7 +230,7 @@ export default class VueRouter {
       route,
       href,
       normalizedTo: location,
-      resolved: route
+      resolved: route,
     }
   }
 
